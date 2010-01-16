@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C# Express 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaspberryRoad.TempusFugit", "RaspberryRoad.TempusFugit.csproj", "{1EFB17DD-6171-47D4-9DAA-BF636083DFFE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1EFB17DD-6171-47D4-9DAA-BF636083DFFE}.Debug|x86.ActiveCfg = Debug|x86
+		{1EFB17DD-6171-47D4-9DAA-BF636083DFFE}.Debug|x86.Build.0 = Debug|x86
+		{1EFB17DD-6171-47D4-9DAA-BF636083DFFE}.Release|x86.ActiveCfg = Release|x86
+		{1EFB17DD-6171-47D4-9DAA-BF636083DFFE}.Release|x86.Build.0 = Release|x86
+		{68689047-5F04-43EE-9238-89D08FF757D4}.Debug|x86.ActiveCfg = Debug|x86
+		{68689047-5F04-43EE-9238-89D08FF757D4}.Release|x86.ActiveCfg = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
