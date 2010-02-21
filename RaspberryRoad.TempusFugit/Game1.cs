@@ -22,18 +22,17 @@ namespace RaspberryRoad.TempusFugit
         SpriteBatch spriteBatch;
         Model model;
 
-        float floatGtc;
-        float floatPastGtc;
-        int gtc;
-        int pastGtc;
-        Dictionary<int, float> pastPositions = new Dictionary<int,float>();
         int targetGtc;
+        Time time;
 
-        Player past;
+        PastPlayer past;
         PresentPlayer present;
         FuturePlayer future;
 
         Door door1, door2;
+        Trigger toggleDoorsTrigger;
+        Trigger spawnFuturePlayerTrigger;
+        Trigger timeTravelTrigger;
 
         BasicEffect cubeEffect;
         BasicShape cube;
@@ -72,7 +71,7 @@ namespace RaspberryRoad.TempusFugit
 
             cube = new BasicShape(new Vector3(100, 1, 1), new Vector3(0, -1, 0));
             cube.shapeTexture = Content.Load<Texture2D>("head");
-            door = new BasicShape(new Vector3(0.1f, 2, 1), new Vector3(0, 0, 0));
+            door = new BasicShape(new Vector3(0.1f, 2, 0.95f), new Vector3(0, 0, 0));
             door.shapeTexture = Content.Load<Texture2D>("pants");
 
             model = Content.Load<Model>("dude");
@@ -96,21 +95,8 @@ namespace RaspberryRoad.TempusFugit
         protected override void Update(GameTime gameTime)
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            time.UpdateGameTime(dt);
 
-            floatGtc += dt * 25f;
-            gtc = (int)floatGtc;
-
-            if (!(past.Exists && pastPositions.Any() && pastPositions[pastGtc] < 0 && pastPositions[pastGtc+1] > 0 && !door1.IsOpen))
-            {
-                floatPastGtc += dt * 25f;
-                pastGtc = (int)floatPastGtc;
-            }
-
-            // Allows the game to exit
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
-                this.Exit();
-
-            // TODO: Add your update logic here
             var state = Keyboard.GetState();
 
             if (state.IsKeyDown(Keys.Right))
@@ -123,7 +109,7 @@ namespace RaspberryRoad.TempusFugit
                 MoveFuturePlayer(3 * dt);
 
             if (past.Exists)
-                MovePastPlayer();
+                MovePastPlayer(dt);
 
             if (state.IsKeyDown(Keys.F1))
             {
@@ -132,81 +118,72 @@ namespace RaspberryRoad.TempusFugit
 
             if (future.Exists)
             {
-                if (pastPositions.ContainsKey(gtc))
-                    pastPositions[gtc] = present.Position.X;
-                else
-                    pastPositions.Add(gtc, present.Position.X);
+                past.Record(present, time.GlobalTimeCoordinate);
             }
-
-            if (pastPositions.Keys.Any() && gtc > pastPositions.Keys.Max())
-                past.Exists = false;
 
             base.Update(gameTime);
         }
 
         private void ResetWorld()
         {
-            floatGtc = gtc = 0;
+            time = new Time();
+
             present = new PresentPlayer();
             present.Position.X = -10;
+
             future = new FuturePlayer();
             future.Position.X = 2;
             future.Exists = false;
-            pastPositions = new Dictionary<int, float>();
-            past = new Player();
+
+            past = new PastPlayer();
             past.Exists = false;
+
             door1 = new Door();
             door1.Position.X = 0;
             door1.IsOpen = false;
+
             door2 = new Door();
             door2.Position.X = 8;
             door2.IsOpen = true;
+
+            toggleDoorsTrigger = new Trigger() { Position = new Position() { X = 10 } };
+            toggleDoorsTrigger.Actions.Add(() =>
+            {
+                door1.Toggle();
+                door2.Toggle();
+            });
+
+            spawnFuturePlayerTrigger = new Trigger() { Position = new Position() { X = -2 }, OneTime = true };
+            spawnFuturePlayerTrigger.Actions.Add(() =>
+            {
+                future.Exists = true;
+                targetGtc = time.GlobalTimeCoordinate;
+            });
+
+            timeTravelTrigger = new Trigger() { Position = new Position() { X = 2 }, OneTime = true };
+            timeTravelTrigger.Actions.Add(() => 
+            {
+                time.JumpTo(targetGtc);
+                past.Spawn();
+                door1.IsOpen = false;
+                door2.IsOpen = true;
+                future.Exists = false;
+            });
         }
 
         private void MovePlayer(float delta)
         {
-            switch (present.Move(delta, door1, door2, future))
-            {
-                case PresentPlayerMoveResult.None:
-                    break;
-                case PresentPlayerMoveResult.SpawnFuture:
-                    Console.WriteLine("Spawned future player");
-                    future.Exists = true;
-                    targetGtc = gtc;
-                    break;
-                case PresentPlayerMoveResult.TimeTravel:
-                    Console.WriteLine("Time travelled!");
-                    gtc = targetGtc;
-                    floatGtc = gtc;
-                    past.Exists = true;
-                    door1.IsOpen = false;
-                    door2.IsOpen = true;
-                    future.Exists = false;
-                    break;
-                case PresentPlayerMoveResult.TriggerDoors:
-                    Console.WriteLine("Triggered doors");
-                    door1.Toggle();
-                    door2.Toggle();
-                    break;
-            }
+            present.Move(delta, door1, door2, future, toggleDoorsTrigger, spawnFuturePlayerTrigger, timeTravelTrigger);
         }
 
         private void MoveFuturePlayer(float delta)
         {
-            switch (future.Move(delta, door1, door2))
-            {
-                case PresentPlayerMoveResult.TriggerDoors:
-                    Console.WriteLine("Future player triggered doors.");
-                    door1.Toggle();
-                    door2.Toggle();
-                    break;
-            }
+            future.Move(delta, door1, door2, toggleDoorsTrigger);
         }
 
-        private void MovePastPlayer()
+        private void MovePastPlayer(float deltaTime)
         {
-
-            pastGtc = gtc;
+            past.Move(deltaTime, time.GlobalTimeCoordinate, door1);
         }
 
         /// <summary>
@@ -220,7 +197,7 @@ namespace RaspberryRoad.TempusFugit
             DrawModel();
 
             spriteBatch.Begin(SpriteBlendMode.AlphaBlend, SpriteSortMode.Immediate, SaveStateMode.SaveState);
-            spriteBatch.DrawString(font, gtc.ToString() + ", " + targetGtc.ToString(), Vector2.Zero, Color.White);
+            spriteBatch.DrawString(font, time.GlobalTimeCoordinate.ToString() + ", " + targetGtc.ToString(), Vector2.Zero, Color.White);
             spriteBatch.End();
 
             base.Draw(gameTime);
@@ -277,7 +254,7 @@ namespace RaspberryRoad.TempusFugit
 
                         effect.View = view;
                         effect.Projection = projection;
-                        effect.World = Matrix.CreateRotationY((float)(Math.PI / 2.0)) * Matrix.CreateScale(0.025f) * Matrix.CreateTranslation(pastPositions[pastGtc], 0, 0) * transforms[mesh.ParentBone.Index];
+                        effect.World = Matrix.CreateRotationY((float)(Math.PI / 2.0)) * Matrix.CreateScale(0.025f) * Matrix.CreateTranslation(past.Position.X, 0, 0) * transforms[mesh.ParentBone.Index];
                     }
                     mesh.Draw();
                 }

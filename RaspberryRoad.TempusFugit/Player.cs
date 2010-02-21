@@ -21,66 +21,73 @@ namespace RaspberryRoad.TempusFugit
         }
     }
 
-    public enum PresentPlayerMoveResult
-    {
-        None,
-        TimeTravel,
-        SpawnFuture,
-        TriggerDoors
-    }
-
     public class PresentPlayer : Player
     {
-        private bool timeTravelled = false;
-
-        public PresentPlayerMoveResult Move(float delta, Door door1, Door door2, Player future)
+        public void Move(float delta, Door door1, Door door2, FuturePlayer future, Trigger toggleDoorsTrigger, Trigger spawnFuturePlayerTrigger, Trigger timeTravelTrigger)
         {
-            if ((Position.X < 0) && (Position.X + delta > 0) && !door1.IsOpen)
-                return PresentPlayerMoveResult.None;
+            if (spawnFuturePlayerTrigger.IsTriggeredBy(Position, delta))
+                spawnFuturePlayerTrigger.Fire();
 
-            if ((Position.X < 8) && (Position.X + delta > 8) && !door2.IsOpen)
-                return PresentPlayerMoveResult.None;
+            if (toggleDoorsTrigger.IsTriggeredBy(Position, delta))
+                toggleDoorsTrigger.Fire();
 
-            Position.X += delta;
+            if (timeTravelTrigger.IsTriggeredBy(Position, delta))
+                timeTravelTrigger.Fire();
 
-            if ((Position.X < -2) && (Position.X + delta > -2) && !future.Exists)
-            {
-                return PresentPlayerMoveResult.SpawnFuture;
-            }
-
-            if ((Position.X < 10) && (Position.X + delta > 10))
-            {
-                return PresentPlayerMoveResult.TriggerDoors;
-            }
-
-            if ((Position.X < 2) && (Position.X + delta > 2) && !timeTravelled)
-            {
-                timeTravelled = true;
-                return PresentPlayerMoveResult.TimeTravel;
-            }
-
-            return PresentPlayerMoveResult.None;
+            if (door1.CanPass(Position, delta) && door2.CanPass(Position, delta))
+                Position.X += delta;
         }
     }
 
     public class FuturePlayer : Player
     {
-        public PresentPlayerMoveResult Move(float delta, Door door1, Door door2)
+        public void Move(float delta, Door door1, Door door2, Trigger doorsTrigger)
         {
-            if ((Position.X < 0) && (Position.X + delta > 0) && !door1.IsOpen)
-                return PresentPlayerMoveResult.None;
+            if (door1.CanPass(Position, delta) && door2.CanPass(Position, delta))
+                Position.X += delta;
 
-            if ((Position.X < 8) && (Position.X + delta > 8) && !door2.IsOpen)
-                return PresentPlayerMoveResult.None;
+            if (doorsTrigger.IsTriggeredBy(Position, delta))
+                doorsTrigger.Fire();
+        }
+    }
 
-            Position.X += delta;
- 
-            if ((Position.X < 10) && (Position.X + delta > 10))
+    public class PastPlayer : Player
+    {
+        private Dictionary<int, Position> pastPositions = new Dictionary<int, Position>();
+        private float currentFloatGtc = 0f;
+        private int currentGtc = 0;
+
+        public void Move(float deltaTime, int gtc, Door door1)
+        {
+            if (!pastPositions.Any())
+                return;
+
+            if (currentGtc >= pastPositions.Keys.Max())
+                Exists = false;
+            else
             {
-                return PresentPlayerMoveResult.TriggerDoors;
-            }
+                if ((door1.CanPass(pastPositions[currentGtc], pastPositions[currentGtc + 1])))
+                {
+                    currentFloatGtc += deltaTime * 25f;
+                    currentGtc = (int)currentFloatGtc;
+                }
 
-            return PresentPlayerMoveResult.None;
+                Position = pastPositions[currentGtc];
+            }
+        }
+
+        public void Record(PresentPlayer present, int gtc)
+        {
+            if (pastPositions.ContainsKey(gtc))
+                pastPositions[gtc] = new Position() { X = present.Position.X };
+            else
+                pastPositions.Add(gtc, new Position() { X = present.Position.X });
+        }
+
+        public void Spawn()
+        {
+            Exists = true;
+            currentFloatGtc = currentGtc = pastPositions.Keys.First();
         }
     }
 }

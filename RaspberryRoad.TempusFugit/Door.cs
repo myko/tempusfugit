@@ -19,5 +19,24 @@ namespace RaspberryRoad.TempusFugit
         {
             IsOpen = !IsOpen;
         }
+
+        public bool CanPass(Position objectPosition, float delta)
+        {
+            return CanPass(objectPosition, new Position() { X = objectPosition.X + delta });
+        }
+
+        public bool CanPass(Position currentPosition, Position newPosition)
+        {
+            if (!IsOpen)
+            {
+                if ((currentPosition.X < this.Position.X) && (newPosition.X > this.Position.X))
+                    return false;
+
+                if ((currentPosition.X > this.Position.X) && (newPosition.X < this.Position.X))
+                    return false;
+            }
+
+            return true;
+        }
     }
 }
