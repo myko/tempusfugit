@@ -54,14 +54,16 @@ namespace RaspberryRoad.TempusFugit
             timeTravelArrivalEffectTrigger.Actions.Add(() =>
             {
                 specialEffects.Add(new SpecialEffect(timeTravelSphere, new Position() { X = 4f }, spawnFuturePlayerTrigger,
-                    t => Matrix.CreateScale(Math.Min(t, 1f) * 2f)));
+                    t => Matrix.CreateScale(Math.Min(t, 1f) * 2f),
+                    t => Math.Min(1f, 2.5f - t)));
             });
 
             timeTravelDepartureEffectTrigger = new Trigger() { OneTime = true };
             timeTravelDepartureEffectTrigger.Actions.Add(() =>
             {
                 specialEffects.Add(new SpecialEffect(timeTravelSphere, new Position() { X = PastPlayer.Position.X }, timeTravelTrigger,
-                    t => Matrix.CreateScale(Math.Min(1.5f - t, 1f) * 2f)));
+                    t => Matrix.CreateScale(Math.Min(2.5f - t, 1f) * 2f),
+                    t => Math.Min(1f, t)));
             });
 
             spawnFuturePlayerTrigger = new Trigger() { OneTime = true };

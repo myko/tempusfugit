@@ -14,20 +14,22 @@ namespace RaspberryRoad.TempusFugit
         Position position;
         Trigger trigger;
         Func<float, Matrix> scale;
+        Func<float, float> alpha;
         Random r;
 
-        public SpecialEffect(Model model, Position position, Trigger trigger, Func<float, Matrix> scale)
+        public SpecialEffect(Model model, Position position, Trigger trigger, Func<float, Matrix> scale, Func<float, float> alpha)
         {
             this.model = model;
             this.position = position;
             this.trigger = trigger;
             this.scale = scale;
+            this.alpha = alpha;
             r = new Random();
         }
 
         public bool IsActive()
         {
-            return time < 1.5f;
+            return time < 2.5f;
         }
 
         public void Update(float dt)
@@ -59,7 +61,7 @@ namespace RaspberryRoad.TempusFugit
 
         public float GetAlpha()
         {
-            return 1.5f - time;
+            return alpha(time);
         }
     }
 }
