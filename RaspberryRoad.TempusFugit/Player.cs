@@ -42,6 +42,7 @@ namespace RaspberryRoad.TempusFugit
             AnimationClip clip = skinningData.AnimationClips["Take 001"];
 
             AnimationPlayer.StartClip(clip);
+            AnimationPlayer.Update(TimeSpan.Zero, true, Matrix.Identity);
         }
     }
 
