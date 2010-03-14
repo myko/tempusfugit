@@ -116,6 +116,11 @@ namespace RaspberryRoad.TempusFugit
                 ResetWorld();
             }
 
+            if (state.IsKeyDown(Keys.Escape))
+            {
+                Exit();
+            }
+
             if (level.FuturePlayer.Exists)
             {
                 level.PastPlayer.Record(level.PresentPlayer, time.GlobalTimeCoordinate);
