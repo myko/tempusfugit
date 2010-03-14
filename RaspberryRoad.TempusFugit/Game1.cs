@@ -34,8 +34,6 @@ namespace RaspberryRoad.TempusFugit
         
         List<SpecialEffect> specialEffects;
 
-        // TODO: REMOVE THIS LINE: 201003142150: testar git /Andreas
-
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
