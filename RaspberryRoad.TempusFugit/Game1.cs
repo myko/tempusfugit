@@ -167,7 +167,10 @@ namespace RaspberryRoad.TempusFugit
             DrawPlayer(level.FuturePlayer, projection, view);
             DrawPlayer(level.PastPlayer, projection, view);
 
+            // TODO: Don't hard code stuff in a level to draw
             DrawModel(ground, projection, view, Matrix.Identity, Vector3.Zero, 1f);
+            DrawModel(door, projection, view, level.Door1.GetMatrix(), Vector3.Zero, 1);
+            DrawModel(door, projection, view, level.Door2.GetMatrix(), Vector3.Zero, 1);
 
             graphics.GraphicsDevice.RenderState.AlphaBlendEnable = true;
             graphics.GraphicsDevice.RenderState.SourceBlend = Blend.SourceAlpha;
@@ -181,8 +184,6 @@ namespace RaspberryRoad.TempusFugit
 
             graphics.GraphicsDevice.RenderState.AlphaBlendEnable = false;
 
-            DrawModel(door, projection, view, Matrix.CreateTranslation(level.Door1.Position.X, 2, level.Door1.IsOpen ? -3.1f : 1), Vector3.Zero, 1);
-            DrawModel(door, projection, view, Matrix.CreateTranslation(level.Door2.Position.X, 2, level.Door2.IsOpen ? -3.1f : 1), Vector3.Zero, 1);
         }
 
         private void DrawModel(Model model, Matrix projection, Matrix view, Matrix world, Vector3 ambientColor, float alpha)

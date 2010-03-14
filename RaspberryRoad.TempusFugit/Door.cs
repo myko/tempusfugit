@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.Xna.Framework;
 
 namespace RaspberryRoad.TempusFugit
 {
@@ -37,6 +38,11 @@ namespace RaspberryRoad.TempusFugit
             }
 
             return true;
+        }
+
+        public Matrix GetMatrix()
+        {
+            return Matrix.CreateTranslation(Position.X, 2, IsOpen ? -3.1f : 1);
         }
     }
 }
