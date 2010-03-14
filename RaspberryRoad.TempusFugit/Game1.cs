@@ -10,6 +10,7 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using Microsoft.Xna.Framework.Net;
 using Microsoft.Xna.Framework.Storage;
+using SkinnedModel;
 
 namespace RaspberryRoad.TempusFugit
 {
@@ -21,27 +22,22 @@ namespace RaspberryRoad.TempusFugit
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         Model model;
+        Model ground;
+        Model doorFrame;
+        Model timeTravelSphere;
+        Model door;
+        SpriteFont font;
 
-        int targetGtc;
         Time time;
 
-        PastPlayer past;
-        PresentPlayer present;
-        FuturePlayer future;
-
-        Door door1, door2;
-        Trigger toggleDoorsTrigger;
-        Trigger spawnFuturePlayerTrigger;
-        Trigger timeTravelTrigger;
-
-        BasicEffect cubeEffect;
-        BasicShape cube;
-        BasicShape door;
-        SpriteFont font;
+        Level level;
+        
+        List<SpecialEffect> specialEffects;
 
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
+            graphics.PreferMultiSampling = true;
             Content.RootDirectory = "Content";
         }
 
@@ -53,8 +49,6 @@ namespace RaspberryRoad.TempusFugit
         /// </summary>
         protected override void Initialize()
         {
-            ResetWorld();
-
             base.Initialize();
         }
 
@@ -67,15 +61,15 @@ namespace RaspberryRoad.TempusFugit
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            cubeEffect = new BasicEffect(GraphicsDevice, null);
-
-            cube = new BasicShape(new Vector3(100, 1, 1), new Vector3(0, -1, 0));
-            cube.shapeTexture = Content.Load<Texture2D>("head");
-            door = new BasicShape(new Vector3(0.1f, 2, 0.95f), new Vector3(0, 0, 0));
-            door.shapeTexture = Content.Load<Texture2D>("pants");
-
+            door = Content.Load<Model>("door");
             model = Content.Load<Model>("dude");
+            ground = Content.Load<Model>("ground");
+            doorFrame = Content.Load<Model>("doorframe");
             font = Content.Load<SpriteFont>("Kootenay");
+
+            timeTravelSphere = Content.Load<Model>("timetravelsphere");
+
+            ResetWorld();
         }
 
         /// <summary>
@@ -99,27 +93,39 @@ namespace RaspberryRoad.TempusFugit
 
             var state = Keyboard.GetState();
 
+            float speed = 3f;
+
             if (state.IsKeyDown(Keys.Right))
-                MovePlayer(3 * dt);
+            {
+                level.MovePlayer(speed * dt);
+            }
 
             if (state.IsKeyDown(Keys.Left))
-                MovePlayer(-3 * dt);
+            {
+                level.MovePlayer(-1 * speed * dt);
+            }
+            
+            if (level.FuturePlayer.Exists)
+                level.MoveFuturePlayer(speed * dt);
 
-            if (future.Exists)
-                MoveFuturePlayer(3 * dt);
-
-            if (past.Exists)
-                MovePastPlayer(dt);
+            if (level.PastPlayer.Exists)
+                level.MovePastPlayer(dt, time);
 
             if (state.IsKeyDown(Keys.F1))
             {
                 ResetWorld();
             }
 
-            if (future.Exists)
+            if (level.FuturePlayer.Exists)
             {
-                past.Record(present, time.GlobalTimeCoordinate);
+                level.PastPlayer.Record(level.PresentPlayer, time.GlobalTimeCoordinate);
             }
+
+            foreach (var effect in specialEffects)
+            {
+                effect.Update(dt);
+            }
+            specialEffects.RemoveAll(x => !x.IsActive());
 
             base.Update(gameTime);
         }
@@ -128,62 +134,10 @@ namespace RaspberryRoad.TempusFugit
         {
             time = new Time();
 
-            present = new PresentPlayer();
-            present.Position.X = -10;
+            specialEffects = new List<SpecialEffect>();
 
-            future = new FuturePlayer();
-            future.Position.X = 2;
-            future.Exists = false;
-
-            past = new PastPlayer();
-            past.Exists = false;
-
-            door1 = new Door();
-            door1.Position.X = 0;
-            door1.IsOpen = false;
-
-            door2 = new Door();
-            door2.Position.X = 8;
-            door2.IsOpen = true;
-
-            toggleDoorsTrigger = new Trigger() { Position = new Position() { X = 10 } };
-            toggleDoorsTrigger.Actions.Add(() =>
-            {
-                door1.Toggle();
-                door2.Toggle();
-            });
-
-            spawnFuturePlayerTrigger = new Trigger() { Position = new Position() { X = -2 }, OneTime = true };
-            spawnFuturePlayerTrigger.Actions.Add(() =>
-            {
-                future.Exists = true;
-                targetGtc = time.GlobalTimeCoordinate;
-            });
-
-            timeTravelTrigger = new Trigger() { Position = new Position() { X = 2 }, OneTime = true };
-            timeTravelTrigger.Actions.Add(() => 
-            {
-                time.JumpTo(targetGtc);
-                past.Spawn();
-                door1.IsOpen = false;
-                door2.IsOpen = true;
-                future.Exists = false;
-            });
-        }
-
-        private void MovePlayer(float delta)
-        {
-            present.Move(delta, door1, door2, future, toggleDoorsTrigger, spawnFuturePlayerTrigger, timeTravelTrigger);
-        }
-
-        private void MoveFuturePlayer(float delta)
-        {
-            future.Move(delta, door1, door2, toggleDoorsTrigger);
-        }
-
-        private void MovePastPlayer(float deltaTime)
-        {
-            past.Move(deltaTime, time.GlobalTimeCoordinate, door1);
+            level = new Level();
+            level.Reset(specialEffects, timeTravelSphere, model, time);
         }
 
         /// <summary>
@@ -194,121 +148,78 @@ namespace RaspberryRoad.TempusFugit
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            DrawModel();
+            DrawWorld();
 
             spriteBatch.Begin(SpriteBlendMode.AlphaBlend, SpriteSortMode.Immediate, SaveStateMode.SaveState);
-            spriteBatch.DrawString(font, time.GlobalTimeCoordinate.ToString() + ", " + targetGtc.ToString(), Vector2.Zero, Color.White);
+            spriteBatch.DrawString(font, time.GlobalTimeCoordinate.ToString() + ", " + level.TargetGtc.ToString(), Vector2.Zero, Color.White);
             spriteBatch.End();
 
             base.Draw(gameTime);
         }
 
-        private void DrawModel()
+        private void DrawWorld()
         {
-            Matrix[] transforms = new Matrix[model.Bones.Count];
-            model.CopyAbsoluteBoneTransformsTo(transforms);
-
             float aspectRatio = graphics.GraphicsDevice.Viewport.Width / (float)graphics.GraphicsDevice.Viewport.Height;
             Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45.0f), aspectRatio, 1.0f, 10000.0f);
-            Matrix view = Matrix.CreateLookAt(new Vector3(present.Position.X, 8, 18), new Vector3(present.Position.X, 4, 0), Vector3.Up);
+            Matrix view = Matrix.CreateLookAt(new Vector3(level.PresentPlayer.Position.X, 2, 30), new Vector3(level.PresentPlayer.Position.X, 2, 0), Vector3.Up);
 
+            DrawPlayer(level.PresentPlayer, projection, view);
+            DrawPlayer(level.FuturePlayer, projection, view);
+            DrawPlayer(level.PastPlayer, projection, view);
+
+            DrawModel(ground, projection, view, Matrix.Identity, Vector3.Zero, 1f);
+
+            graphics.GraphicsDevice.RenderState.AlphaBlendEnable = true;
+            graphics.GraphicsDevice.RenderState.SourceBlend = Blend.SourceAlpha;
+            graphics.GraphicsDevice.RenderState.DestinationBlend = Blend.InverseSourceAlpha;
+            graphics.GraphicsDevice.RenderState.BlendFunction = BlendFunction.Add; // add source and dest results
+
+            foreach (var effect in specialEffects)
+            {
+                DrawModel(effect.GetModel(), projection, view, effect.GetMatrix(), new Vector3(1, 1, 1), effect.GetAlpha());
+            }
+
+            graphics.GraphicsDevice.RenderState.AlphaBlendEnable = false;
+
+            DrawModel(door, projection, view, Matrix.CreateTranslation(level.Door1.Position.X, 2, level.Door1.IsOpen ? -3.1f : 1), Vector3.Zero, 1);
+            DrawModel(door, projection, view, Matrix.CreateTranslation(level.Door2.Position.X, 2, level.Door2.IsOpen ? -3.1f : 1), Vector3.Zero, 1);
+        }
+
+        private void DrawModel(Model model, Matrix projection, Matrix view, Matrix world, Vector3 ambientColor, float alpha)
+        {
             foreach (ModelMesh mesh in model.Meshes)
             {
                 foreach (BasicEffect effect in mesh.Effects)
                 {
+                    effect.Alpha = alpha;
                     effect.EnableDefaultLighting();
-                    effect.DiffuseColor = new Vector3(1, 0, 0);
-
-                    effect.View = view;
+                    effect.AmbientLightColor = ambientColor;
                     effect.Projection = projection;
-                    effect.World = Matrix.CreateRotationY((float)(Math.PI / 2.0)) * Matrix.CreateScale(0.025f) * Matrix.CreateTranslation(present.Position.X, 0, 0) * transforms[mesh.ParentBone.Index];
+                    effect.View = view;
+                    effect.World = world;
                 }
                 mesh.Draw();
             }
+        }
 
-            if (future.Exists)
+        private void DrawPlayer(Player player, Matrix projection, Matrix view)
+        {
+            Matrix[] bones = player.AnimationPlayer.GetSkinTransforms();
+            
+            if (player.Exists)
             {
-                foreach (ModelMesh mesh in model.Meshes)
+                foreach (ModelMesh mesh in player.Model.Meshes)
                 {
-                    foreach (BasicEffect effect in mesh.Effects)
+                    foreach (Effect effect in mesh.Effects)
                     {
-                        effect.EnableDefaultLighting();
-                        effect.DiffuseColor = new Vector3(0, 1, 0);
-
-                        effect.View = view;
-                        effect.Projection = projection;
-                        effect.World = Matrix.CreateRotationY((float)(Math.PI / 2.0)) * Matrix.CreateScale(0.025f) * Matrix.CreateTranslation(future.Position.X, 0, 0) * transforms[mesh.ParentBone.Index];
+                        effect.Parameters["Bones"].SetValue(bones);
+                        effect.Parameters["View"].SetValue(view);
+                        effect.Parameters["Projection"].SetValue(projection);
+                        effect.Parameters["World"].SetValue(Matrix.CreateRotationY((float)(Math.PI / 2.0 * player.Rotation)) * Matrix.CreateScale(0.025f) * Matrix.CreateTranslation(player.Position.X, 0, 0));
                     }
                     mesh.Draw();
                 }
             }
-
-            if (past.Exists)
-            {
-                foreach (ModelMesh mesh in model.Meshes)
-                {
-                    foreach (BasicEffect effect in mesh.Effects)
-                    {
-                        effect.EnableDefaultLighting();
-                        effect.DiffuseColor = new Vector3(0, 0, 1);
-
-                        effect.View = view;
-                        effect.Projection = projection;
-                        effect.World = Matrix.CreateRotationY((float)(Math.PI / 2.0)) * Matrix.CreateScale(0.025f) * Matrix.CreateTranslation(past.Position.X, 0, 0) * transforms[mesh.ParentBone.Index];
-                    }
-                    mesh.Draw();
-                }
-            }
-
-            cubeEffect.EnableDefaultLighting();
-            cubeEffect.World = Matrix.Identity;
-            cubeEffect.View = view;
-            cubeEffect.Projection = projection;
-            cubeEffect.TextureEnabled = true;
-            cubeEffect.Texture = cube.shapeTexture;
-
-            cubeEffect.Begin();
-
-            foreach (EffectPass pass in cubeEffect.CurrentTechnique.Passes)
-            {
-                pass.Begin();
-
-                cube.RenderShape(GraphicsDevice);
-
-                pass.End();
-            }
-
-            cubeEffect.End();
-
-            cubeEffect.World = Matrix.CreateTranslation(door1.Position.X, door1.IsOpen ? 4 : 1, 0);
-            cubeEffect.Texture = door.shapeTexture;
-            cubeEffect.Begin();
-
-            foreach (EffectPass pass in cubeEffect.CurrentTechnique.Passes)
-            {
-                pass.Begin();
-
-                door.RenderShape(GraphicsDevice);
-
-                pass.End();
-            }
-
-            cubeEffect.End();
-
-            cubeEffect.World = Matrix.CreateTranslation(door2.Position.X, door2.IsOpen ? 4 : 1, 0);
-            cubeEffect.Texture = door.shapeTexture;
-            cubeEffect.Begin();
-
-            foreach (EffectPass pass in cubeEffect.CurrentTechnique.Passes)
-            {
-                pass.Begin();
-
-                door.RenderShape(GraphicsDevice);
-
-                pass.End();
-            }
-
-            cubeEffect.End();
         }
     }
 }

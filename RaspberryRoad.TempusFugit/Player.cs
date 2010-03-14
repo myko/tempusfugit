@@ -1,7 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using Microsoft.Xna.Framework.Graphics;
+using SkinnedModel;
+using System;
+using Microsoft.Xna.Framework;
 
 namespace RaspberryRoad.TempusFugit
 {
@@ -13,18 +15,52 @@ namespace RaspberryRoad.TempusFugit
     public class Player
     {
         public Position Position { get; set; }
+        public int Rotation { get; set; }
         public bool Exists { get; set; }
 
-        public Player()
+        public Model Model { get; set; }
+        public AnimationPlayer AnimationPlayer { get; set; }
+
+        public Player(Model model)
         {
+            this.Model = model;
+            Exists = true;
+
             Position = new Position();
+            Rotation = -1;
+
+            // Look up our custom skinning information.
+            SkinningData skinningData = model.Tag as SkinningData;
+
+            if (skinningData == null)
+                throw new InvalidOperationException
+                    ("This model does not contain a SkinningData tag.");
+
+            // Create an animation player, and start decoding an animation clip.
+            AnimationPlayer = new AnimationPlayer(skinningData);
+
+            AnimationClip clip = skinningData.AnimationClips["Take 001"];
+
+            AnimationPlayer.StartClip(clip);
         }
     }
 
     public class PresentPlayer : Player
     {
-        public void Move(float delta, Door door1, Door door2, FuturePlayer future, Trigger toggleDoorsTrigger, Trigger spawnFuturePlayerTrigger, Trigger timeTravelTrigger)
+        public PresentPlayer(Model model)
+            :base(model)
         {
+        }
+
+        public void Move(float delta, Door door1, Door door2, FuturePlayer future, PositionalTrigger toggleDoorsTrigger, PositionalTrigger spawnFuturePlayerTrigger, PositionalTrigger timeTravelTrigger)
+        {
+            AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(delta)), true, Matrix.Identity);
+
+            if (delta < 0)
+                Rotation = 1;
+            if (delta > 0)
+                Rotation = -1;
+            
             if (spawnFuturePlayerTrigger.IsTriggeredBy(Position, delta))
                 spawnFuturePlayerTrigger.Fire();
 
@@ -34,15 +70,22 @@ namespace RaspberryRoad.TempusFugit
             if (timeTravelTrigger.IsTriggeredBy(Position, delta))
                 timeTravelTrigger.Fire();
 
-            if (door1.CanPass(Position, delta) && door2.CanPass(Position, delta))
+            if (((Position.X + delta) > -10) && ((Position.X + delta) < 14) && door1.CanPass(Position, delta) && door2.CanPass(Position, delta))
                 Position.X += delta;
         }
     }
 
     public class FuturePlayer : Player
     {
-        public void Move(float delta, Door door1, Door door2, Trigger doorsTrigger)
+        public FuturePlayer(Model model)
+            : base(model)
         {
+        }
+
+        public void Move(float delta, Door door1, Door door2, PositionalTrigger doorsTrigger)
+        {
+            AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(delta)), true, Matrix.Identity);
+
             if (door1.CanPass(Position, delta) && door2.CanPass(Position, delta))
                 Position.X += delta;
 
@@ -57,15 +100,31 @@ namespace RaspberryRoad.TempusFugit
         private float currentFloatGtc = 0f;
         private int currentGtc = 0;
 
-        public void Move(float deltaTime, int gtc, Door door1)
+        public PastPlayer(Model model)
+            : base(model)
+        {
+        }
+
+        public void Move(float deltaTime, int gtc, Door door1, Trigger departureTrigger)
         {
             if (!pastPositions.Any())
                 return;
 
             if (currentGtc >= pastPositions.Keys.Max())
+            {
                 Exists = false;
+                departureTrigger.Fire();
+            }
             else
             {
+                float delta = pastPositions[currentGtc + 1].X - pastPositions[currentGtc].X;
+                if (delta < 0)
+                    Rotation = 1;
+                if (delta > 0)
+                    Rotation = -1;
+
+                AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(3f * delta / 25f)), true, Matrix.Identity);
+
                 if ((door1.CanPass(pastPositions[currentGtc], pastPositions[currentGtc + 1])))
                 {
                     currentFloatGtc += deltaTime * 25f;

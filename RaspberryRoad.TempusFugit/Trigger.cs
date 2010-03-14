@@ -7,9 +7,7 @@ namespace RaspberryRoad.TempusFugit
 {
     public class Trigger
     {
-        private int triggerCount = 0;
-
-        public Position Position { get; set; }
+        protected int triggerCount = 0;
         public List<Action> Actions { get; set; }
         public bool OneTime { get; set; }
 
@@ -29,6 +27,15 @@ namespace RaspberryRoad.TempusFugit
             {
                 action();
             }
+        }
+    }
+
+    public class PositionalTrigger : Trigger
+    {
+        public Position Position { get; set; }
+
+        public PositionalTrigger()
+        {
         }
 
         public bool IsTriggeredBy(Position objectPosition, float delta)
