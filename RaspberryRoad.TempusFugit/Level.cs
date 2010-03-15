@@ -47,7 +47,10 @@ namespace RaspberryRoad.TempusFugit
             Door2.Position.X = 8;
             Door2.IsOpen = true;
 
-            toggleDoorsTrigger = new PositionalTrigger() { Position = new Position() { X = 10 } };
+            Position doorsButtonPosition = new Position() { X = 10 };
+            Position timeMachinePosition = new Position() { X = 4f };
+
+            toggleDoorsTrigger = new PositionalTrigger() { Position = doorsButtonPosition };
             toggleDoorsTrigger.Actions.Add(() =>
             {
                 Door1.Toggle();
@@ -68,7 +71,7 @@ namespace RaspberryRoad.TempusFugit
             timeTravelArrivalEffectTrigger = new PositionalTrigger() { Position = new Position() { X = -2 }, OneTime = true };
             timeTravelArrivalEffectTrigger.Actions.Add(() =>
             {
-                specialEffects.Add(new SpecialEffect(timeTravelSphere, new Position() { X = 4f }, spawnFuturePlayerTrigger, moveFuturePlayerTrigger, 
+                specialEffects.Add(new SpecialEffect(timeTravelSphere, timeMachinePosition, spawnFuturePlayerTrigger, moveFuturePlayerTrigger, 
                     t => Matrix.CreateScale(Math.Min(t, 1f) * 2f),
                     t => Math.Min(1f, 2.5f - t)));
             });
@@ -88,7 +91,7 @@ namespace RaspberryRoad.TempusFugit
                 TargetGtc = time.GlobalTimeCoordinate;
             });
 
-            timeTravelTrigger = new PositionalTrigger() { Position = new Position() { X = 4 }, OneTime = true };
+            timeTravelTrigger = new PositionalTrigger() { Position = timeMachinePosition, OneTime = true };
             timeTravelTrigger.Actions.Add(() =>
             {
                 time.JumpTo(TargetGtc);
@@ -96,7 +99,7 @@ namespace RaspberryRoad.TempusFugit
                 Door1.IsOpen = false;
                 Door2.IsOpen = true;
                 FuturePlayer.Exists = false;
-                specialEffects.Add(new SpecialEffect(timeTravelSphere, new Position() { X = 4f }, null, null, t => Matrix.CreateScale(2f), t => (t < 0.5f ? 1f : 0f)));
+                specialEffects.Add(new SpecialEffect(timeTravelSphere, timeMachinePosition, null, null, t => Matrix.CreateScale(2f), t => (t < 0.5f ? 1f : 0f)));
             });
         }
 
