@@ -19,7 +19,7 @@ namespace RaspberryRoad.TempusFugit
         PositionalTrigger toggleDoorsTrigger;
         Trigger spawnFuturePlayerTrigger;
         PositionalTrigger timeTravelTrigger;
-        PositionalTrigger timeTravelArrivalEffectTrigger;
+        PositionalTrigger arrivalEffectTrigger;
         Trigger timeTravelDepartureEffectTrigger;
         public int TargetGtc { get; set; }
         
@@ -50,8 +50,8 @@ namespace RaspberryRoad.TempusFugit
                 Door2.Toggle();
             });
 
-            timeTravelArrivalEffectTrigger = new PositionalTrigger() { Position = new Position() { X = -2 }, OneTime = true };
-            timeTravelArrivalEffectTrigger.Actions.Add(() =>
+            arrivalEffectTrigger = new PositionalTrigger() { Position = new Position() { X = -2 }, OneTime = true };
+            arrivalEffectTrigger.Actions.Add(() =>
             {
                 specialEffects.Add(new SpecialEffect(timeTravelSphere, new Position() { X = 4f }, spawnFuturePlayerTrigger,
                     t => Matrix.CreateScale(Math.Min(t, 1f) * 2f),
@@ -86,7 +86,7 @@ namespace RaspberryRoad.TempusFugit
 
         public void MovePlayer(float delta)
         {
-            PresentPlayer.Move(delta, Door1, Door2, FuturePlayer, toggleDoorsTrigger, timeTravelArrivalEffectTrigger, timeTravelTrigger);
+            PresentPlayer.Move(delta, Door1, Door2, FuturePlayer, toggleDoorsTrigger, arrivalEffectTrigger, timeTravelTrigger);
         }
 
         public void MoveFuturePlayer(float delta)
