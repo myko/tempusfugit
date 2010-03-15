@@ -12,16 +12,18 @@ namespace RaspberryRoad.TempusFugit
         float time = 0f;
         Model model;
         Position position;
-        Trigger trigger;
+        Trigger spawnTrigger;
+        Trigger moveTrigger;
         Func<float, Matrix> scale;
         Func<float, float> alpha;
         Random r;
 
-        public SpecialEffect(Model model, Position position, Trigger trigger, Func<float, Matrix> scale, Func<float, float> alpha)
+        public SpecialEffect(Model model, Position position, Trigger spawnTrigger, Trigger moveTrigger, Func<float, Matrix> scale, Func<float, float> alpha)
         {
             this.model = model;
             this.position = position;
-            this.trigger = trigger;
+            this.spawnTrigger = spawnTrigger;
+            this.moveTrigger = moveTrigger;
             this.scale = scale;
             this.alpha = alpha;
             r = new Random();
@@ -37,10 +39,19 @@ namespace RaspberryRoad.TempusFugit
             time += dt;
             if (time > 1f)
             {
-                if (trigger != null)
+                if (spawnTrigger != null)
                 {
-                    trigger.Fire();
-                    trigger = null;
+                    spawnTrigger.Fire();
+                    spawnTrigger = null;
+                }
+            }
+
+            if (time > 2.5f)
+            {
+                if (moveTrigger != null)
+                {
+                    moveTrigger.Fire();
+                    moveTrigger = null;
                 }
             }
         }

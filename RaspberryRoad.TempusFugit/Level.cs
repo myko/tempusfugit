@@ -16,11 +16,15 @@ namespace RaspberryRoad.TempusFugit
         public PresentPlayer PresentPlayer { get; set; }
         public FuturePlayer FuturePlayer { get; set; }
 
+        bool futurePlayerMoving = false;
+
         PositionalTrigger toggleDoorsTrigger;
         Trigger spawnFuturePlayerTrigger;
+        Trigger moveFuturePlayerTrigger;
         PositionalTrigger timeTravelTrigger;
         PositionalTrigger timeTravelArrivalEffectTrigger;
         Trigger timeTravelDepartureEffectTrigger;
+        Trigger removePastPlayerTrigger;
         public int TargetGtc { get; set; }
         
         public void Reset(List<SpecialEffect> specialEffects, Model timeTravelSphere, Model model, Time time)
@@ -50,10 +54,21 @@ namespace RaspberryRoad.TempusFugit
                 Door2.Toggle();
             });
 
+            moveFuturePlayerTrigger = new Trigger() { OneTime = true };
+            moveFuturePlayerTrigger.Actions.Add(() =>
+            {
+                futurePlayerMoving = true;
+            });
+
+            removePastPlayerTrigger = new Trigger() { OneTime = true };
+            removePastPlayerTrigger.Actions.Add(() => { 
+                PastPlayer.Exists = false;
+            });
+
             timeTravelArrivalEffectTrigger = new PositionalTrigger() { Position = new Position() { X = -2 }, OneTime = true };
             timeTravelArrivalEffectTrigger.Actions.Add(() =>
             {
-                specialEffects.Add(new SpecialEffect(timeTravelSphere, new Position() { X = 4f }, spawnFuturePlayerTrigger,
+                specialEffects.Add(new SpecialEffect(timeTravelSphere, new Position() { X = 4f }, spawnFuturePlayerTrigger, moveFuturePlayerTrigger, 
                     t => Matrix.CreateScale(Math.Min(t, 1f) * 2f),
                     t => Math.Min(1f, 2.5f - t)));
             });
@@ -61,7 +76,7 @@ namespace RaspberryRoad.TempusFugit
             timeTravelDepartureEffectTrigger = new Trigger() { OneTime = true };
             timeTravelDepartureEffectTrigger.Actions.Add(() =>
             {
-                specialEffects.Add(new SpecialEffect(timeTravelSphere, new Position() { X = PastPlayer.Position.X }, timeTravelTrigger,
+                specialEffects.Add(new SpecialEffect(timeTravelSphere, new Position() { X = PastPlayer.Position.X }, removePastPlayerTrigger, null, 
                     t => Matrix.CreateScale(Math.Min(2.5f - t, 1f) * 2f),
                     t => Math.Min(1f, t)));
             });
@@ -81,6 +96,7 @@ namespace RaspberryRoad.TempusFugit
                 Door1.IsOpen = false;
                 Door2.IsOpen = true;
                 FuturePlayer.Exists = false;
+                specialEffects.Add(new SpecialEffect(timeTravelSphere, new Position() { X = 4f }, null, null, t => Matrix.CreateScale(2f), t => (t < 0.5f ? 1f : 0f)));
             });
         }
 
@@ -91,7 +107,8 @@ namespace RaspberryRoad.TempusFugit
 
         public void MoveFuturePlayer(float delta)
         {
-            FuturePlayer.Move(delta, Door1, Door2, toggleDoorsTrigger);
+            if (futurePlayerMoving)
+                FuturePlayer.Move(delta, Door1, Door2, toggleDoorsTrigger);
         }
 
         public void MovePastPlayer(float deltaTime, Time time)
