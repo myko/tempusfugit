@@ -123,7 +123,7 @@ namespace RaspberryRoad.TempusFugit
                 if (delta > 0)
                     Rotation = -1;
 
-                AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(3f * delta / 25f)), true, Matrix.Identity);
+                AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(4f * delta / 25f)), true, Matrix.Identity);
 
                 if ((door1.CanPass(pastPositions[currentGtc], pastPositions[currentGtc + 1])))
                 {
@@ -131,7 +131,8 @@ namespace RaspberryRoad.TempusFugit
                     currentGtc = (int)currentFloatGtc;
                 }
 
-                Position = pastPositions[currentGtc];
+                float a = 1f - (currentFloatGtc - currentGtc);
+                Position = new Position() { X = pastPositions[currentGtc].X * a + pastPositions[Math.Min(currentGtc + 1, pastPositions.Keys.Max())].X * (1 - a) };
             }
         }
 
