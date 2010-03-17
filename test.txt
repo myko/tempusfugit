@@ -2,3 +2,4 @@ lorem ipsum
 this line is for the commit - issue test in issue #2
 this line is for the commit - issue test in issue #2
 test
+test
