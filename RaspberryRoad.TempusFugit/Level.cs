@@ -1,24 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 namespace RaspberryRoad.TempusFugit
 {
     public class Level
     {
-        public Door Door1 { get; set; }
-        public Door Door2 { get; set; }
-
-        public PastPlayer PastPlayer { get; set; }
-        public PresentPlayer PresentPlayer { get; set; }
-        public FuturePlayer FuturePlayer { get; set; }
-
+        private PastPlayer pastPlayer;
+        private FuturePlayer futurePlayer;
         bool futurePlayerMoving = false;
 
+        // TODO: Don't keep a static list of all our geometry
+        private Ground ground;
+        private Door door1;
+        private Door door2;
+
+        // TODO: Don't keep a static list of all our "scripting"
         PositionalTrigger toggleDoorsTrigger;
         Trigger spawnFuturePlayerTrigger;
         Trigger moveFuturePlayerTrigger;
@@ -26,27 +25,36 @@ namespace RaspberryRoad.TempusFugit
         PositionalTrigger timeTravelArrivalEffectTrigger;
         Trigger timeTravelDepartureEffectTrigger;
         Trigger removePastPlayerTrigger;
+
         public int TargetGtc { get; set; }
+        public PresentPlayer PresentPlayer { get; set; }
+        public Time Time { get; set; }
         
-        public void Reset(List<SpecialEffect> specialEffects, Model timeTravelSphere, Model model, Time time)
+        // TODO: Don't take a reference to the list of special effects
+        // TODO: Don't take references to all models we need
+        public void Reset(List<SpecialEffect> specialEffects, Model timeTravelSphere, Model playerModel, Model groundModel, Model doorModel)
         {
-            PresentPlayer = new PresentPlayer(model);
-            PresentPlayer.Position.X = -5;
+            Time = new Time();
 
-            FuturePlayer = new FuturePlayer(model);
-            FuturePlayer.Position.X = 4;
-            FuturePlayer.Exists = false;
+            PresentPlayer = new PresentPlayer(playerModel);
+            PresentPlayer.Position = new Position(-5);
 
-            PastPlayer = new PastPlayer(model);
-            PastPlayer.Exists = false;
+            futurePlayer = new FuturePlayer(playerModel);
+            futurePlayer.Position = new Position(4);
+            futurePlayer.Exists = false;
 
-            Door1 = new Door();
-            Door1.Position.X = 0;
-            Door1.IsOpen = false;
+            pastPlayer = new PastPlayer(playerModel);
+            pastPlayer.Exists = false;
 
-            Door2 = new Door();
-            Door2.Position.X = 8;
-            Door2.IsOpen = true;
+            ground = new Ground(groundModel);
+
+            door1 = new Door(doorModel);
+            door1.Position = new Position(0);
+            door1.IsOpen = false;
+
+            door2 = new Door(doorModel);
+            door2.Position = new Position(8);
+            door2.IsOpen = true;
 
             Position doorsButtonPosition = new Position() { X = 10 };
             Position timeMachinePosition = new Position() { X = 4f };
@@ -54,8 +62,8 @@ namespace RaspberryRoad.TempusFugit
             toggleDoorsTrigger = new PositionalTrigger() { Position = doorsButtonPosition };
             toggleDoorsTrigger.Actions.Add(() =>
             {
-                Door1.Toggle();
-                Door2.Toggle();
+                door1.Toggle();
+                door2.Toggle();
             });
 
             moveFuturePlayerTrigger = new Trigger() { OneTime = true };
@@ -66,7 +74,7 @@ namespace RaspberryRoad.TempusFugit
 
             removePastPlayerTrigger = new Trigger() { OneTime = true };
             removePastPlayerTrigger.Actions.Add(() => { 
-                PastPlayer.Exists = false;
+                pastPlayer.Exists = false;
             });
 
             timeTravelArrivalEffectTrigger = new PositionalTrigger() { Position = new Position() { X = -2 }, OneTime = true };
@@ -80,7 +88,7 @@ namespace RaspberryRoad.TempusFugit
             timeTravelDepartureEffectTrigger = new Trigger() { OneTime = true };
             timeTravelDepartureEffectTrigger.Actions.Add(() =>
             {
-                specialEffects.Add(new SpecialEffect(timeTravelSphere, new Position() { X = PastPlayer.Position.X }, removePastPlayerTrigger, null, 
+                specialEffects.Add(new SpecialEffect(timeTravelSphere, new Position() { X = pastPlayer.Position.X }, removePastPlayerTrigger, null, 
                     t => Matrix.CreateScale(Math.Min(2.5f - t, 1f) * 2f),
                     t => Math.Min(1f, t)));
             });
@@ -88,40 +96,45 @@ namespace RaspberryRoad.TempusFugit
             spawnFuturePlayerTrigger = new Trigger() { OneTime = true };
             spawnFuturePlayerTrigger.Actions.Add(() =>
             {
-                FuturePlayer.Exists = true;
-                TargetGtc = time.GlobalTimeCoordinate;
+                futurePlayer.Exists = true;
+                TargetGtc = Time.GlobalTimeCoordinate;
             });
 
             timeTravelTrigger = new PositionalTrigger() { Position = timeMachinePosition, OneTime = true };
             timeTravelTrigger.Actions.Add(() =>
             {
-                time.JumpTo(TargetGtc);
-                PastPlayer.Spawn();
-                Door1.IsOpen = false;
-                Door2.IsOpen = true;
-                FuturePlayer.Exists = false;
-                specialEffects.Add(new SpecialEffect(timeTravelSphere, timeMachinePosition, null, null, t => Matrix.CreateScale((float)Math.Sin(t*40)*0.2f + 1.8f), t => (t < 0.5f ? 1f : 0f)));
+                Time.JumpTo(TargetGtc);
+                pastPlayer.Spawn();
+                door1.IsOpen = false;
+                door2.IsOpen = true;
+                futurePlayer.Exists = false;
+                specialEffects.Add(new SpecialEffect(timeTravelSphere, timeMachinePosition, null, null, 
+                    t => Matrix.CreateScale((float)Math.Sin(t * 40) * 0.2f + 1.8f), 
+                    t => (t < 0.5f ? 1f : 0f)));
             });
         }
 
-        public bool Update(float dt, Time time, KeyboardState state)
+        // TODO: Don't pass keyboard state directly, abstract it away
+        public bool Update(float dt, KeyboardState state)
         {
+            Time.UpdateGameTime(dt);
+
             if (state.IsKeyDown(Keys.Right))
                 MovePlayer(dt);
 
             if (state.IsKeyDown(Keys.Left))
                 MovePlayer(-dt);
             
-            if (FuturePlayer.Exists)
+            if (futurePlayer.Exists)
                 MoveFuturePlayer(dt);
 
-            if (PastPlayer.Exists)
-                MovePastPlayer(dt, time);
+            if (pastPlayer.Exists)
+                MovePastPlayer(dt, Time);
 
-            if (FuturePlayer.Exists)
-                PastPlayer.Record(PresentPlayer, time.GlobalTimeCoordinate);
+            if (futurePlayer.Exists)
+                pastPlayer.Record(PresentPlayer, Time.GlobalTimeCoordinate);
 
-            if (time.GlobalTimeCoordinate > 500 && (PresentPlayer.Position.X < (Door1.Position.X + 0.1f) || PastPlayer.Position.X < (Door1.Position.X + 0.1f)))
+            if (Time.GlobalTimeCoordinate > 500 && (PresentPlayer.Position.X < (door1.Position.X + 0.1f) || pastPlayer.Position.X < (door1.Position.X + 0.1f)))
                 return false;
 
             return true;
@@ -130,20 +143,37 @@ namespace RaspberryRoad.TempusFugit
         public void MovePlayer(float delta)
         {
             // TODO: Don't pass everything in the level to the present player
-            PresentPlayer.Move(Player.Speed * delta, Door1, Door2, FuturePlayer, toggleDoorsTrigger, timeTravelArrivalEffectTrigger, timeTravelTrigger);
+            PresentPlayer.Move(Player.Speed * delta, door1, door2, futurePlayer, toggleDoorsTrigger, timeTravelArrivalEffectTrigger, timeTravelTrigger);
         }
 
         public void MoveFuturePlayer(float delta)
         {
             // TODO: Don't pass everything in the level to the future player
             if (futurePlayerMoving)
-                FuturePlayer.Move(Player.Speed * delta, Door1, Door2, toggleDoorsTrigger);
+                futurePlayer.Move(Player.Speed * delta, door1, door2, toggleDoorsTrigger);
         }
 
         public void MovePastPlayer(float deltaTime, Time time)
         {
             // TODO: Don't pass everything in the level to the past player
-            PastPlayer.Move(deltaTime, time.GlobalTimeCoordinate, Door1, timeTravelDepartureEffectTrigger);
+            pastPlayer.Move(deltaTime, time.GlobalTimeCoordinate, door1, timeTravelDepartureEffectTrigger);
+        }
+
+        public IEnumerable<Entity> GetEntities()
+        {
+            yield return ground;
+            yield return door1;
+            yield return door2;
+        }
+
+        public IEnumerable<Player> GetActivePlayers()
+        {
+            if (PresentPlayer.Exists)
+                yield return PresentPlayer;
+            if (futurePlayer.Exists)
+                yield return futurePlayer;
+            if (pastPlayer.Exists)
+                yield return pastPlayer;
         }
     }
 }

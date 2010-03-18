@@ -18,11 +18,11 @@ float4x4 Projection;
 
 float4x4 Bones[MaxBones];
 
-float3 Light1Direction = normalize(float3(3, 1, 2));
-float3 Light1Color = float3(0.9, 0.8, 0.7);
+float3 Light1Direction = normalize(float3(0.5, -1, -0.2));
+float3 Light1Color = float3(1, 0.9, 0.6);
 
-float3 Light2Direction = normalize(float3(-1, -1, -1));
-float3 Light2Color = float3(0.1, 0.3, 0.8);
+float3 Light2Direction = normalize(float3(-0.3, 1, 0.1));
+float3 Light2Color = float3(1, 0.4, 0.1);
 
 float3 AmbientColor = 0.2;
 
@@ -79,8 +79,8 @@ VS_OUTPUT VertexShader(VS_INPUT input)
     // Skin the vertex normal, then compute lighting.
     float3 normal = normalize(mul(mul(input.Normal, skinTransform), World));
     
-    float3 light1 = max(dot(normal, Light1Direction), 0) * Light1Color;
-    float3 light2 = max(dot(normal, Light2Direction), 0) * Light2Color;
+    float3 light1 = max(dot(normal, -Light1Direction), 0) * Light1Color;
+    float3 light2 = max(dot(normal, -Light2Direction), 0) * Light2Color;
 
     output.Lighting = light1 + light2 + AmbientColor;
 

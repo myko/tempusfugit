@@ -1,16 +1,7 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Audio;
-using Microsoft.Xna.Framework.Content;
-using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Media;
-using Microsoft.Xna.Framework.Net;
-using Microsoft.Xna.Framework.Storage;
-using SkinnedModel;
 
 namespace RaspberryRoad.TempusFugit
 {
@@ -21,14 +12,11 @@ namespace RaspberryRoad.TempusFugit
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        Model model;
-        Model ground;
-        Model doorFrame;
-        Model timeTravelSphere;
-        Model door;
+        Model playerModel;
+        Model groundModel;
+        Model timeTravelSphereModel;
+        Model doorModel;
         SpriteFont font;
-
-        Time time;
 
         Level level;
         
@@ -58,16 +46,14 @@ namespace RaspberryRoad.TempusFugit
         /// </summary>
         protected override void LoadContent()
         {
-            // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            door = Content.Load<Model>("door");
-            model = Content.Load<Model>("dude");
-            ground = Content.Load<Model>("ground");
-            doorFrame = Content.Load<Model>("doorframe");
             font = Content.Load<SpriteFont>("Kootenay");
 
-            timeTravelSphere = Content.Load<Model>("timetravelsphere");
+            doorModel = Content.Load<Model>("door");
+            playerModel = Content.Load<Model>("dude");
+            groundModel = Content.Load<Model>("ground");
+            timeTravelSphereModel = Content.Load<Model>("timetravelsphere");
 
             ResetWorld();
         }
@@ -78,7 +64,6 @@ namespace RaspberryRoad.TempusFugit
         /// </summary>
         protected override void UnloadContent()
         {
-            // TODO: Unload any non ContentManager content here
         }
 
         /// <summary>
@@ -89,27 +74,21 @@ namespace RaspberryRoad.TempusFugit
         protected override void Update(GameTime gameTime)
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            time.UpdateGameTime(dt);
+            
+            var keyboardState = Keyboard.GetState();
 
-            var state = Keyboard.GetState();
-
-            if (state.IsKeyDown(Keys.F1))
-            {
+            if (keyboardState.IsKeyDown(Keys.F1))
                 ResetWorld();
-            }
 
-            if (state.IsKeyDown(Keys.Escape))
-            {
+            if (keyboardState.IsKeyDown(Keys.Escape))
                 Exit();
-            }
 
-            if (!level.Update(dt, time, state))
+            if (!level.Update(dt, keyboardState))
                 ResetWorld();
 
             foreach (var effect in specialEffects)
-            {
                 effect.Update(dt);
-            }
+
             specialEffects.RemoveAll(x => !x.IsActive());
 
             base.Update(gameTime);
@@ -117,12 +96,11 @@ namespace RaspberryRoad.TempusFugit
 
         private void ResetWorld()
         {
-            time = new Time();
-
             specialEffects = new List<SpecialEffect>();
 
             level = new Level();
-            level.Reset(specialEffects, timeTravelSphere, model, time);
+            // TODO: Don't pass all the models the level needs through here
+            level.Reset(specialEffects, timeTravelSphereModel, playerModel, groundModel, doorModel);
         }
 
         /// <summary>
@@ -136,7 +114,7 @@ namespace RaspberryRoad.TempusFugit
             DrawWorld();
 
             spriteBatch.Begin(SpriteBlendMode.AlphaBlend, SpriteSortMode.Immediate, SaveStateMode.SaveState);
-            spriteBatch.DrawString(font, time.GlobalTimeCoordinate.ToString() + ", " + level.TargetGtc.ToString(), Vector2.Zero, Color.White);
+            spriteBatch.DrawString(font, level.Time.GlobalTimeCoordinate.ToString() + ", " + level.TargetGtc.ToString(), Vector2.Zero, Color.White);
             spriteBatch.End();
 
             base.Draw(gameTime);
@@ -144,31 +122,36 @@ namespace RaspberryRoad.TempusFugit
 
         private void DrawWorld()
         {
+            // TODO: Abstract away into a Camera class
             float aspectRatio = graphics.GraphicsDevice.Viewport.Width / (float)graphics.GraphicsDevice.Viewport.Height;
             Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45.0f), aspectRatio, 1.0f, 10000.0f);
             Matrix view = Matrix.CreateLookAt(new Vector3(level.PresentPlayer.Position.X, 2, 30), new Vector3(level.PresentPlayer.Position.X, 2, 0), Vector3.Up);
 
-            DrawPlayer(level.PresentPlayer, projection, view);
-            DrawPlayer(level.FuturePlayer, projection, view);
-            DrawPlayer(level.PastPlayer, projection, view);
+            foreach (var player in level.GetActivePlayers())
+                DrawAnimatedModel(player.Model, projection, view, player.GetMatrix());
 
-            // TODO: Don't hard code stuff in a level to draw
-            DrawModel(ground, projection, view, Matrix.Identity, Vector3.Zero, 1f);
-            DrawModel(door, projection, view, level.Door1.GetMatrix(), Vector3.Zero, 1);
-            DrawModel(door, projection, view, level.Door2.GetMatrix(), Vector3.Zero, 1);
+            foreach (var entity in level.GetEntities())
+                DrawModel(entity.Model, projection, view, entity.GetMatrix(), Vector3.Zero, 1);
 
+            EnableTransparency();
+
+            foreach (var effect in specialEffects)
+                DrawModel(effect.GetModel(), projection, view, effect.GetMatrix(), Vector3.One, effect.GetAlpha());
+
+            DisableTransparency();
+        }
+
+        private void EnableTransparency()
+        {
             graphics.GraphicsDevice.RenderState.AlphaBlendEnable = true;
             graphics.GraphicsDevice.RenderState.SourceBlend = Blend.SourceAlpha;
             graphics.GraphicsDevice.RenderState.DestinationBlend = Blend.InverseSourceAlpha;
             graphics.GraphicsDevice.RenderState.BlendFunction = BlendFunction.Add; // add source and dest results
+        }
 
-            foreach (var effect in specialEffects)
-            {
-                DrawModel(effect.GetModel(), projection, view, effect.GetMatrix(), new Vector3(1, 1, 1), effect.GetAlpha());
-            }
-
+        private void DisableTransparency()
+        {
             graphics.GraphicsDevice.RenderState.AlphaBlendEnable = false;
-
         }
 
         private void DrawModel(Model model, Matrix projection, Matrix view, Matrix world, Vector3 ambientColor, float alpha)
@@ -178,8 +161,20 @@ namespace RaspberryRoad.TempusFugit
                 foreach (BasicEffect effect in mesh.Effects)
                 {
                     effect.Alpha = alpha;
-                    effect.EnableDefaultLighting();
-                    effect.AmbientLightColor = ambientColor;
+                    effect.LightingEnabled = true;
+                    effect.PreferPerPixelLighting = true;
+                    effect.AmbientLightColor = new Vector3(0.15f, 0.1f, 0.2f);
+                    effect.DirectionalLight0.Enabled = true;
+                    effect.DirectionalLight0.Direction = new Vector3(0.5f, -1, -0.2f);
+                    effect.DirectionalLight0.DiffuseColor = new Vector3(1, 0.9f, 0.6f);
+                    effect.DirectionalLight0.SpecularColor = new Vector3(1, 1, 1);
+                    effect.DirectionalLight1.Enabled = true;
+                    effect.DirectionalLight1.Direction = new Vector3(-0.3f, 1, 0.1f);
+                    effect.DirectionalLight1.DiffuseColor = new Vector3(1, 0.4f, 0.1f);
+                    effect.DirectionalLight1.SpecularColor = new Vector3(1, 1, 1);
+                    effect.EmissiveColor = ambientColor;
+                    effect.SpecularColor = new Vector3(0.01f, 0.01f, 0.1f);
+                    effect.SpecularPower = 175;
                     effect.Projection = projection;
                     effect.View = view;
                     effect.World = world;
@@ -188,23 +183,20 @@ namespace RaspberryRoad.TempusFugit
             }
         }
 
-        private void DrawPlayer(Player player, Matrix projection, Matrix view)
+        private void DrawAnimatedModel(AnimatedModel model, Matrix projection, Matrix view, Matrix world)
         {
-            Matrix[] bones = player.AnimationPlayer.GetSkinTransforms();
-            
-            if (player.Exists)
+            Matrix[] bones = model.AnimationPlayer.GetSkinTransforms();
+
+            foreach (ModelMesh mesh in model.Model.Meshes)
             {
-                foreach (ModelMesh mesh in player.Model.Meshes)
+                foreach (Effect effect in mesh.Effects)
                 {
-                    foreach (Effect effect in mesh.Effects)
-                    {
-                        effect.Parameters["Bones"].SetValue(bones);
-                        effect.Parameters["View"].SetValue(view);
-                        effect.Parameters["Projection"].SetValue(projection);
-                        effect.Parameters["World"].SetValue(Matrix.CreateRotationY((float)(Math.PI / 2.0 * player.Rotation)) * Matrix.CreateScale(0.025f) * Matrix.CreateTranslation(player.Position.X, 0, 0));
-                    }
-                    mesh.Draw();
+                    effect.Parameters["Bones"].SetValue(bones);
+                    effect.Parameters["View"].SetValue(view);
+                    effect.Parameters["Projection"].SetValue(projection);
+                    effect.Parameters["World"].SetValue(world);
                 }
+                mesh.Draw();
             }
         }
     }

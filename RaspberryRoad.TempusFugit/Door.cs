@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace RaspberryRoad.TempusFugit
 {
-    public class Door
+    public class Door: Entity
     {
         public Position Position { get; set; }
         public bool IsOpen { get; set; }
 
-        public Door()
+        public Door(Model model)
+            : base(model)
         {
             Position = new Position();
         }
@@ -40,7 +38,7 @@ namespace RaspberryRoad.TempusFugit
             return true;
         }
 
-        public Matrix GetMatrix()
+        public override Matrix GetMatrix()
         {
             return Matrix.CreateTranslation(Position.X, 2, IsOpen ? -3.1f : 1);
         }

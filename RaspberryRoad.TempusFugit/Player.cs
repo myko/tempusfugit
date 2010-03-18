@@ -1,15 +1,19 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Xna.Framework.Graphics;
-using SkinnedModel;
-using System;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace RaspberryRoad.TempusFugit
 {
-    public class Position
+    public struct Position
     {
-        public float X { get; set; }
+        public float X;
+
+        public Position(float x)
+        {
+            this.X = x;
+        }
     }
 
     public class Player
@@ -17,34 +21,23 @@ namespace RaspberryRoad.TempusFugit
         public const float Speed = 3f;
 
         public Position Position { get; set; }
-        public int Rotation { get; set; }
+        public int Rotation { get; protected set; }
         public bool Exists { get; set; }
 
-        public Model Model { get; set; }
-        public AnimationPlayer AnimationPlayer { get; set; }
+        public AnimatedModel Model { get; private set; }
 
         public Player(Model model)
         {
-            this.Model = model;
+            this.Model = new AnimatedModel(model);
             Exists = true;
 
             Position = new Position();
             Rotation = -1;
+        }
 
-            // Look up our custom skinning information.
-            SkinningData skinningData = model.Tag as SkinningData;
-
-            if (skinningData == null)
-                throw new InvalidOperationException
-                    ("This model does not contain a SkinningData tag.");
-
-            // Create an animation player, and start decoding an animation clip.
-            AnimationPlayer = new AnimationPlayer(skinningData);
-
-            AnimationClip clip = skinningData.AnimationClips["Take 001"];
-
-            AnimationPlayer.StartClip(clip);
-            AnimationPlayer.Update(TimeSpan.Zero, true, Matrix.Identity);
+        public Matrix GetMatrix()
+        {
+            return Matrix.CreateRotationY((float)(Math.PI / 2.0 * Rotation)) * Matrix.CreateScale(0.025f) * Matrix.CreateTranslation(Position.X, 0, 0);
         }
     }
 
@@ -57,7 +50,7 @@ namespace RaspberryRoad.TempusFugit
 
         public void Move(float delta, Door door1, Door door2, FuturePlayer future, PositionalTrigger toggleDoorsTrigger, PositionalTrigger spawnFuturePlayerTrigger, PositionalTrigger timeTravelTrigger)
         {
-            AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(delta)), true, Matrix.Identity);
+            Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(delta)), true, Matrix.Identity);
 
             if (delta < 0)
                 Rotation = 1;
@@ -74,7 +67,7 @@ namespace RaspberryRoad.TempusFugit
                 timeTravelTrigger.Fire();
 
             if (((Position.X + delta) > -10) && ((Position.X + delta) < 14) && door1.CanPass(Position, delta) && door2.CanPass(Position, delta))
-                Position.X += delta;
+                Position = new Position(Position.X + delta);
         }
     }
 
@@ -87,10 +80,10 @@ namespace RaspberryRoad.TempusFugit
 
         public void Move(float delta, Door door1, Door door2, PositionalTrigger doorsTrigger)
         {
-            AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(delta)), true, Matrix.Identity);
+            Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(delta)), true, Matrix.Identity);
 
             if (door1.CanPass(Position, delta) && door2.CanPass(Position, delta))
-                Position.X += delta;
+                Position = new Position(Position.X + delta);
 
             if (doorsTrigger.IsTriggeredBy(Position, delta))
                 doorsTrigger.Fire();
@@ -125,7 +118,7 @@ namespace RaspberryRoad.TempusFugit
                 if (delta > 0)
                     Rotation = -1;
 
-                AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(9f * delta / 25f)), true, Matrix.Identity);
+                Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(9f * delta / 25f)), true, Matrix.Identity);
 
                 if ((door1.CanPass(pastPositions[currentGtc], pastPositions[currentGtc + 1])))
                 {
@@ -141,9 +134,9 @@ namespace RaspberryRoad.TempusFugit
         public void Record(PresentPlayer present, int gtc)
         {
             if (pastPositions.ContainsKey(gtc))
-                pastPositions[gtc] = new Position() { X = present.Position.X };
+                pastPositions[gtc] = new Position(present.Position.X);
             else
-                pastPositions.Add(gtc, new Position() { X = present.Position.X });
+                pastPositions.Add(gtc, new Position(present.Position.X));
         }
 
         public void Spawn()

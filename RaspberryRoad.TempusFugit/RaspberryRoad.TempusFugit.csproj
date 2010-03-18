@@ -85,7 +85,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Door.cs" />
+    <Compile Include="Entity.cs" />
+    <Compile Include="Ground.cs" />
     <Compile Include="Level.cs" />
+    <Compile Include="AnimatedModel.cs" />
     <Compile Include="SpecialEffect.cs" />
     <Compile Include="Time.cs" />
     <Compile Include="Player.cs" />
