@@ -123,7 +123,7 @@ namespace RaspberryRoad.TempusFugit
                 if (delta > 0)
                     Rotation = -1;
 
-                AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(4f * delta / 25f)), true, Matrix.Identity);
+                AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(9f * delta / 25f)), true, Matrix.Identity);
 
                 if ((door1.CanPass(pastPositions[currentGtc], pastPositions[currentGtc + 1])))
                 {
