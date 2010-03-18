@@ -113,7 +113,6 @@ namespace RaspberryRoad.TempusFugit
 
             if (currentGtc >= pastPositions.Keys.Max())
             {
-                Exists = false;
                 departureTrigger.Fire();
             }
             else
