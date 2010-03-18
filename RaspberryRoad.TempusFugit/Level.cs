@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 
 namespace RaspberryRoad.TempusFugit
 {
@@ -99,23 +100,49 @@ namespace RaspberryRoad.TempusFugit
                 Door1.IsOpen = false;
                 Door2.IsOpen = true;
                 FuturePlayer.Exists = false;
-                specialEffects.Add(new SpecialEffect(timeTravelSphere, timeMachinePosition, null, null, t => Matrix.CreateScale(2f), t => (t < 0.5f ? 1f : 0f)));
+                specialEffects.Add(new SpecialEffect(timeTravelSphere, timeMachinePosition, null, null, t => Matrix.CreateScale((float)Math.Sin(t*40)*0.2f + 1.8f), t => (t < 0.5f ? 1f : 0f)));
             });
+        }
+
+        public bool Update(float dt, Time time, KeyboardState state)
+        {
+            if (state.IsKeyDown(Keys.Right))
+                MovePlayer(dt);
+
+            if (state.IsKeyDown(Keys.Left))
+                MovePlayer(-dt);
+            
+            if (FuturePlayer.Exists)
+                MoveFuturePlayer(dt);
+
+            if (PastPlayer.Exists)
+                MovePastPlayer(dt, time);
+
+            if (FuturePlayer.Exists)
+                PastPlayer.Record(PresentPlayer, time.GlobalTimeCoordinate);
+
+            if (time.GlobalTimeCoordinate > 500 && (PresentPlayer.Position.X < (Door1.Position.X + 0.1f) || PastPlayer.Position.X < (Door1.Position.X + 0.1f)))
+                return false;
+
+            return true;
         }
 
         public void MovePlayer(float delta)
         {
-            PresentPlayer.Move(delta, Door1, Door2, FuturePlayer, toggleDoorsTrigger, timeTravelArrivalEffectTrigger, timeTravelTrigger);
+            // TODO: Don't pass everything in the level to the present player
+            PresentPlayer.Move(Player.Speed * delta, Door1, Door2, FuturePlayer, toggleDoorsTrigger, timeTravelArrivalEffectTrigger, timeTravelTrigger);
         }
 
         public void MoveFuturePlayer(float delta)
         {
+            // TODO: Don't pass everything in the level to the future player
             if (futurePlayerMoving)
-                FuturePlayer.Move(delta, Door1, Door2, toggleDoorsTrigger);
+                FuturePlayer.Move(Player.Speed * delta, Door1, Door2, toggleDoorsTrigger);
         }
 
         public void MovePastPlayer(float deltaTime, Time time)
         {
+            // TODO: Don't pass everything in the level to the past player
             PastPlayer.Move(deltaTime, time.GlobalTimeCoordinate, Door1, timeTravelDepartureEffectTrigger);
         }
     }

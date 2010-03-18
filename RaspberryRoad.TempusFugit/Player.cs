@@ -14,6 +14,8 @@ namespace RaspberryRoad.TempusFugit
 
     public class Player
     {
+        public const float Speed = 3f;
+
         public Position Position { get; set; }
         public int Rotation { get; set; }
         public bool Exists { get; set; }

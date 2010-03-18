@@ -9,7 +9,7 @@ namespace RaspberryRoad.TempusFugit
         /// </summary>
         static void Main(string[] args)
         {
-            using (Game1 game = new Game1())
+            using (TempusFugitGame game = new TempusFugitGame())
             {
                 game.Run();
             }

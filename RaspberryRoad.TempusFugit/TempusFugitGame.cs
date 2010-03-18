@@ -17,7 +17,7 @@ namespace RaspberryRoad.TempusFugit
     /// <summary>
     /// This is the main type for your game
     /// </summary>
-    public class Game1 : Microsoft.Xna.Framework.Game
+    public class TempusFugitGame : Microsoft.Xna.Framework.Game
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
@@ -34,7 +34,7 @@ namespace RaspberryRoad.TempusFugit
         
         List<SpecialEffect> specialEffects;
 
-        public Game1()
+        public TempusFugitGame()
         {
             graphics = new GraphicsDeviceManager(this);
             graphics.PreferMultiSampling = true;
@@ -93,24 +93,6 @@ namespace RaspberryRoad.TempusFugit
 
             var state = Keyboard.GetState();
 
-            float speed = 3f;
-
-            if (state.IsKeyDown(Keys.Right))
-            {
-                level.MovePlayer(speed * dt);
-            }
-
-            if (state.IsKeyDown(Keys.Left))
-            {
-                level.MovePlayer(-1 * speed * dt);
-            }
-            
-            if (level.FuturePlayer.Exists)
-                level.MoveFuturePlayer(speed * dt);
-
-            if (level.PastPlayer.Exists)
-                level.MovePastPlayer(dt, time);
-
             if (state.IsKeyDown(Keys.F1))
             {
                 ResetWorld();
@@ -121,10 +103,8 @@ namespace RaspberryRoad.TempusFugit
                 Exit();
             }
 
-            if (level.FuturePlayer.Exists)
-            {
-                level.PastPlayer.Record(level.PresentPlayer, time.GlobalTimeCoordinate);
-            }
+            if (!level.Update(dt, time, state))
+                ResetWorld();
 
             foreach (var effect in specialEffects)
             {
