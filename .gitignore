@@ -2,4 +2,5 @@ bin/
 obj/
 *.suo
 *.Debug.cachefile
+*.Release.cachefile
 *.csproj.user

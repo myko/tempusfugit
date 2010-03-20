@@ -25,6 +25,7 @@ float3 Light2Direction = normalize(float3(-0.3, 1, 0.1));
 float3 Light2Color = float3(1, 0.4, 0.1);
 
 float3 AmbientColor = 0.2;
+float3 DiffuseColor = 1;
 
 texture Texture;
 
@@ -103,7 +104,7 @@ float4 PixelShader(PS_INPUT input) : COLOR0
 {
     float4 color = tex2D(Sampler, input.TexCoord);
 
-    color.rgb *= input.Lighting;
+    color.rgb *= DiffuseColor * input.Lighting;
     
     return color;
 }

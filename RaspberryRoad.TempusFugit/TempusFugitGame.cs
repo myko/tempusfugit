@@ -128,7 +128,7 @@ namespace RaspberryRoad.TempusFugit
             Matrix view = Matrix.CreateLookAt(new Vector3(level.PresentPlayer.Position.X, 2, 30), new Vector3(level.PresentPlayer.Position.X, 2, 0), Vector3.Up);
 
             foreach (var player in level.GetActivePlayers())
-                DrawAnimatedModel(player.Model, projection, view, player.GetMatrix());
+                DrawAnimatedModel(player.Model, projection, view, player.GetMatrix(), player.GetColor());
 
             foreach (var entity in level.GetEntities())
                 DrawModel(entity.Model, projection, view, entity.GetMatrix(), Vector3.Zero, 1);
@@ -183,7 +183,7 @@ namespace RaspberryRoad.TempusFugit
             }
         }
 
-        private void DrawAnimatedModel(AnimatedModel model, Matrix projection, Matrix view, Matrix world)
+        private void DrawAnimatedModel(AnimatedModel model, Matrix projection, Matrix view, Matrix world, Vector3 ambientColor)
         {
             Matrix[] bones = model.AnimationPlayer.GetSkinTransforms();
 
@@ -195,6 +195,7 @@ namespace RaspberryRoad.TempusFugit
                     effect.Parameters["View"].SetValue(view);
                     effect.Parameters["Projection"].SetValue(projection);
                     effect.Parameters["World"].SetValue(world);
+                    effect.Parameters["DiffuseColor"].SetValue(ambientColor);
                 }
                 mesh.Draw();
             }

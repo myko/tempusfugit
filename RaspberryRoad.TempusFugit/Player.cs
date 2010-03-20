@@ -39,6 +39,11 @@ namespace RaspberryRoad.TempusFugit
         {
             return Matrix.CreateRotationY((float)(Math.PI / 2.0 * Rotation)) * Matrix.CreateScale(0.025f) * Matrix.CreateTranslation(Position.X, 0, 0);
         }
+
+        public virtual Vector3 GetColor()
+        {
+            return new Vector3(1, 1, 1);
+        }
     }
 
     public class PresentPlayer : Player
@@ -87,6 +92,11 @@ namespace RaspberryRoad.TempusFugit
 
             if (doorsTrigger.IsTriggeredBy(Position, delta))
                 doorsTrigger.Fire();
+        }
+
+        public override Vector3 GetColor()
+        {
+            return new Vector3(0.5f, 0.7f, 1);
         }
     }
 
@@ -143,6 +153,11 @@ namespace RaspberryRoad.TempusFugit
         {
             Exists = true;
             currentFloatGtc = currentGtc = pastPositions.Keys.First();
+        }
+
+        public override Vector3 GetColor()
+        {
+            return new Vector3(0.5f, 1, 0.7f);
         }
     }
 }
