@@ -13,7 +13,8 @@ namespace RaspberryRoad.TempusFugit
         bool futurePlayerMoving = false;
 
         // TODO: Don't keep a static list of all our geometry
-        private Ground ground;
+        private StaticEntity ground;
+        private StaticEntity travelPad;
         private Door door1;
         private Door door2;
 
@@ -31,9 +32,15 @@ namespace RaspberryRoad.TempusFugit
         public Time Time { get; set; }
         
         // TODO: Don't take a reference to the list of special effects
-        // TODO: Don't take references to all models we need
-        public void Reset(List<SpecialEffect> specialEffects, Model timeTravelSphere, Model playerModel, Model groundModel, Model doorModel)
+        // TODO: Load all the scripts from a file? Or at least make a "Level 1" subclass
+        public Level(IList<SpecialEffect> specialEffects, IDictionary<string, Model> models)
         {
+            Model timeTravelSphere = models["timetravelsphere"];
+            Model playerModel = models["dude"];
+            Model groundModel = models["ground"];
+            Model doorModel = models["door"];
+            Model travelPadModel = models["travelpad"];
+
             Time = new Time();
 
             PresentPlayer = new PresentPlayer(playerModel);
@@ -46,7 +53,8 @@ namespace RaspberryRoad.TempusFugit
             pastPlayer = new PastPlayer(playerModel);
             pastPlayer.Exists = false;
 
-            ground = new Ground(groundModel);
+            ground = new StaticEntity(groundModel, Matrix.Identity);
+            travelPad = new StaticEntity(travelPadModel, Matrix.CreateTranslation(4, 0, 0));
 
             door1 = new Door(doorModel);
             door1.Position = new Position(0);
@@ -81,7 +89,7 @@ namespace RaspberryRoad.TempusFugit
             timeTravelArrivalEffectTrigger.Actions.Add(() =>
             {
                 specialEffects.Add(new SpecialEffect(timeTravelSphere, timeMachinePosition, spawnFuturePlayerTrigger, moveFuturePlayerTrigger, 
-                    t => Matrix.CreateScale(Math.Min(t, 1f) * 2f),
+                    t => Matrix.CreateScale(Math.Min(t, 1f) * 1.65f),
                     t => Math.Min(1f, 2.5f - t)));
             });
 
@@ -89,7 +97,7 @@ namespace RaspberryRoad.TempusFugit
             timeTravelDepartureEffectTrigger.Actions.Add(() =>
             {
                 specialEffects.Add(new SpecialEffect(timeTravelSphere, new Position() { X = pastPlayer.Position.X }, removePastPlayerTrigger, null, 
-                    t => Matrix.CreateScale(Math.Min(2.5f - t, 1f) * 2f),
+                    t => Matrix.CreateScale(Math.Min(2.5f - t, 1f) * 1.65f),
                     t => Math.Min(1f, t)));
             });
 
@@ -109,8 +117,8 @@ namespace RaspberryRoad.TempusFugit
                 door2.IsOpen = true;
                 futurePlayer.Exists = false;
                 specialEffects.Add(new SpecialEffect(timeTravelSphere, timeMachinePosition, null, null, 
-                    t => Matrix.CreateScale((float)Math.Sin(t * 40) * 0.2f + 1.8f), 
-                    t => (t < 0.5f ? 1f : 0f)));
+                    t => Matrix.CreateScale(1.65f), 
+                    t => (float)Math.Sin(t / 2.5 * Math.PI)));
             });
         }
 
@@ -142,26 +150,26 @@ namespace RaspberryRoad.TempusFugit
 
         public void MovePlayer(float delta)
         {
-            // TODO: Don't pass everything in the level to the present player
-            PresentPlayer.Move(Player.Speed * delta, door1, door2, futurePlayer, toggleDoorsTrigger, timeTravelArrivalEffectTrigger, timeTravelTrigger);
+            PresentPlayer.Move(Player.Speed * delta, this);
         }
 
         public void MoveFuturePlayer(float delta)
         {
-            // TODO: Don't pass everything in the level to the future player
+            // TODO: Use some kind of script for "futurePlayerMoving" instead of a bool
             if (futurePlayerMoving)
-                futurePlayer.Move(Player.Speed * delta, door1, door2, toggleDoorsTrigger);
+                futurePlayer.Move(Player.Speed * delta, this);
         }
 
         public void MovePastPlayer(float deltaTime, Time time)
         {
-            // TODO: Don't pass everything in the level to the past player
-            pastPlayer.Move(deltaTime, time.GlobalTimeCoordinate, door1, timeTravelDepartureEffectTrigger);
+            if (!pastPlayer.Move(deltaTime, this))
+                timeTravelDepartureEffectTrigger.Fire();
         }
 
         public IEnumerable<Entity> GetEntities()
         {
             yield return ground;
+            yield return travelPad;
             yield return door1;
             yield return door2;
         }
@@ -174,6 +182,28 @@ namespace RaspberryRoad.TempusFugit
                 yield return futurePlayer;
             if (pastPlayer.Exists)
                 yield return pastPlayer;
+        }
+
+        public bool CanMove(Position position, float delta)
+        {
+            return CanMove(position, new Position(position.X + delta));
+        }
+
+        public bool CanMove(Position position, Position newPosition)
+        {
+            return (((newPosition.X) > -10) && ((newPosition.X) < 14) && door1.CanPass(position, newPosition) && door2.CanPass(position, newPosition));
+        }
+
+        public void FireTriggers(Position Position, float delta)
+        {
+            if (timeTravelArrivalEffectTrigger.IsTriggeredBy(Position, delta))
+                timeTravelArrivalEffectTrigger.Fire();
+
+            if (toggleDoorsTrigger.IsTriggeredBy(Position, delta))
+                toggleDoorsTrigger.Fire();
+
+            if (timeTravelTrigger.IsTriggeredBy(Position, delta))
+                timeTravelTrigger.Fire();
         }
     }
 }

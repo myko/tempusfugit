@@ -38,7 +38,7 @@ namespace RaspberryRoad.TempusFugit
 
         public bool IsTriggeredBy(Position objectPosition, float delta)
         {
-            return ((objectPosition.X < Position.X) && (objectPosition.X + delta > Position.X));
+            return ((objectPosition.X < Position.X) && (objectPosition.X + delta > Position.X)) || ((objectPosition.X > Position.X) && (objectPosition.X + delta < Position.X));
         }
     }
 }

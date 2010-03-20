@@ -12,11 +12,9 @@ namespace RaspberryRoad.TempusFugit
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
-        Model playerModel;
-        Model groundModel;
-        Model timeTravelSphereModel;
-        Model doorModel;
+        
         SpriteFont font;
+        Dictionary<string, Model> models = new Dictionary<string, Model>();
 
         Level level;
         
@@ -40,6 +38,11 @@ namespace RaspberryRoad.TempusFugit
             base.Initialize();
         }
 
+        private void LoadModel(string name)
+        {
+            models.Add(name, Content.Load<Model>(name));
+        }
+
         /// <summary>
         /// LoadContent will be called once per game and is the place to load
         /// all of your content.
@@ -50,10 +53,11 @@ namespace RaspberryRoad.TempusFugit
 
             font = Content.Load<SpriteFont>("Kootenay");
 
-            doorModel = Content.Load<Model>("door");
-            playerModel = Content.Load<Model>("dude");
-            groundModel = Content.Load<Model>("ground");
-            timeTravelSphereModel = Content.Load<Model>("timetravelsphere");
+            LoadModel("door");
+            LoadModel("dude");
+            LoadModel("ground");
+            LoadModel("timetravelsphere");
+            LoadModel("travelpad");
 
             ResetWorld();
         }
@@ -98,9 +102,7 @@ namespace RaspberryRoad.TempusFugit
         {
             specialEffects = new List<SpecialEffect>();
 
-            level = new Level();
-            // TODO: Don't pass all the models the level needs through here
-            level.Reset(specialEffects, timeTravelSphereModel, playerModel, groundModel, doorModel);
+            level = new Level(specialEffects, models);
         }
 
         /// <summary>
@@ -125,7 +127,7 @@ namespace RaspberryRoad.TempusFugit
             // TODO: Abstract away into a Camera class
             float aspectRatio = graphics.GraphicsDevice.Viewport.Width / (float)graphics.GraphicsDevice.Viewport.Height;
             Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45.0f), aspectRatio, 1.0f, 10000.0f);
-            Matrix view = Matrix.CreateLookAt(new Vector3(level.PresentPlayer.Position.X, 2, 30), new Vector3(level.PresentPlayer.Position.X, 2, 0), Vector3.Up);
+            Matrix view = Matrix.CreateLookAt(new Vector3(level.PresentPlayer.Position.X, 3, 19), new Vector3(level.PresentPlayer.Position.X, 2, 0), Vector3.Up);
 
             foreach (var player in level.GetActivePlayers())
                 DrawAnimatedModel(player.Model, projection, view, player.GetMatrix(), player.GetColor());

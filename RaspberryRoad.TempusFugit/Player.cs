@@ -53,7 +53,7 @@ namespace RaspberryRoad.TempusFugit
         {
         }
 
-        public void Move(float delta, Door door1, Door door2, FuturePlayer future, PositionalTrigger toggleDoorsTrigger, PositionalTrigger spawnFuturePlayerTrigger, PositionalTrigger timeTravelTrigger)
+        public void Move(float delta, Level level)
         {
             Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(delta)), true, Matrix.Identity);
 
@@ -61,17 +61,10 @@ namespace RaspberryRoad.TempusFugit
                 Rotation = 1;
             if (delta > 0)
                 Rotation = -1;
-            
-            if (spawnFuturePlayerTrigger.IsTriggeredBy(Position, delta))
-                spawnFuturePlayerTrigger.Fire();
 
-            if (toggleDoorsTrigger.IsTriggeredBy(Position, delta))
-                toggleDoorsTrigger.Fire();
+            level.FireTriggers(Position, delta);
 
-            if (timeTravelTrigger.IsTriggeredBy(Position, delta))
-                timeTravelTrigger.Fire();
-
-            if (((Position.X + delta) > -10) && ((Position.X + delta) < 14) && door1.CanPass(Position, delta) && door2.CanPass(Position, delta))
+            if (level.CanMove(Position, delta))
                 Position = new Position(Position.X + delta);
         }
     }
@@ -83,15 +76,15 @@ namespace RaspberryRoad.TempusFugit
         {
         }
 
-        public void Move(float delta, Door door1, Door door2, PositionalTrigger doorsTrigger)
+        public void Move(float delta, Level level)
         {
-            Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(delta)), true, Matrix.Identity);
-
-            if (door1.CanPass(Position, delta) && door2.CanPass(Position, delta))
+            if (level.CanMove(Position, delta))
+            {
+                Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(delta)), true, Matrix.Identity);
                 Position = new Position(Position.X + delta);
+            }
 
-            if (doorsTrigger.IsTriggeredBy(Position, delta))
-                doorsTrigger.Fire();
+            level.FireTriggers(Position, delta);
         }
 
         public override Vector3 GetColor()
@@ -111,16 +104,16 @@ namespace RaspberryRoad.TempusFugit
         {
         }
 
-        public void Move(float deltaTime, int gtc, Door door1, Trigger departureTrigger)
+        public bool Move(float deltaTime, Level level)
         {
             if (!pastPositions.Any())
-                return;
+                return true;
 
             if (currentGtc >= pastPositions.Keys.Max())
-            {
-                departureTrigger.Fire();
-            }
-            else
+                return false;
+
+
+            if ((level.CanMove(pastPositions[currentGtc], pastPositions[currentGtc + 1])))
             {
                 float delta = pastPositions[currentGtc + 1].X - pastPositions[currentGtc].X;
                 if (delta < 0)
@@ -130,15 +123,14 @@ namespace RaspberryRoad.TempusFugit
 
                 Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(9f * delta / 25f)), true, Matrix.Identity);
 
-                if ((door1.CanPass(pastPositions[currentGtc], pastPositions[currentGtc + 1])))
-                {
-                    currentFloatGtc += deltaTime * 25f;
-                    currentGtc = (int)currentFloatGtc;
-                }
-
-                float a = 1f - (currentFloatGtc - currentGtc);
-                Position = new Position() { X = pastPositions[currentGtc].X * a + pastPositions[Math.Min(currentGtc + 1, pastPositions.Keys.Max())].X * (1 - a) };
+                currentFloatGtc += deltaTime * 25f;
+                currentGtc = (int)currentFloatGtc;
             }
+
+            float a = 1f - (currentFloatGtc - currentGtc);
+            Position = new Position() { X = pastPositions[currentGtc].X * a + pastPositions[Math.Min(currentGtc + 1, pastPositions.Keys.Max())].X * (1 - a) };
+
+            return true;
         }
 
         public void Record(PresentPlayer present, int gtc)
