@@ -139,11 +139,11 @@ namespace RaspberryRoad.TempusFugit
 
             if (!lockPlayer)
             {
-                if (state.IsKeyDown(Keys.Right))
-                    MovePlayer(dt);
-
                 if (state.IsKeyDown(Keys.Left))
                     MovePlayer(-dt);
+
+                if (state.IsKeyDown(Keys.Right))
+                    MovePlayer(dt);
             }            
 
             if (futurePlayer.Exists)
