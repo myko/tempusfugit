@@ -27,10 +27,13 @@ namespace RaspberryRoad.TempusFugit
         PositionalTrigger timeTravelArrivalEffectTrigger;
         Trigger timeTravelDepartureEffectTrigger;
         Trigger removePastPlayerTrigger;
+        Trigger unlockPlayerTrigger;
 
         public int TargetGtc { get; set; }
         public PresentPlayer PresentPlayer { get; set; }
         public Time Time { get; set; }
+
+        private bool lockPlayer = false;
         
         // TODO: Don't take a reference to the list of special effects
         // TODO: Load all the scripts from a file? Or at least make a "Level 1" subclass
@@ -119,9 +122,16 @@ namespace RaspberryRoad.TempusFugit
                 door1.IsOpen = false;
                 door2.IsOpen = true;
                 futurePlayer.Exists = false;
-                specialEffects.Add(new SpecialEffect(timeTravelSphere, timeMachinePosition, null, null, 
-                    t => Matrix.CreateScale(1.65f), 
+                lockPlayer = true;
+                specialEffects.Add(new SpecialEffect(timeTravelSphere, timeMachinePosition, null, unlockPlayerTrigger,
+                    t => Matrix.CreateScale(1.65f),
                     t => (float)Math.Sin(t / 2.5 * Math.PI)));
+            });
+
+            unlockPlayerTrigger = new Trigger() { OneTime = true };
+            unlockPlayerTrigger.Actions.Add(() => 
+            {
+                lockPlayer = false;
             });
         }
 
@@ -133,11 +143,14 @@ namespace RaspberryRoad.TempusFugit
             float vx = 0f;
             float vy = 0f;
 
-            if (state.IsKeyDown(Keys.Right))
-                vx = dt;
+            if (!lockPlayer)
+            {
+                if (state.IsKeyDown(Keys.Right))
+                    vx = dt;
 
-            if (state.IsKeyDown(Keys.Left))
-                vx = -dt;
+                if (state.IsKeyDown(Keys.Left))
+                    vx = -dt;
+            }
 
             if (PresentPlayer.Position.Y > 0)
                 vy -= dt;
