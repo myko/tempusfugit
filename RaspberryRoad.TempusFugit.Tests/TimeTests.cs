@@ -5,41 +5,33 @@ using linxUnit;
 
 namespace RaspberryRoad.TempusFugit.Tests
 {
-    public class TimeTest : TestCase
+    public class TimeTests : TestCase
     {
-        public TimeTest(string name)
+        private Time time;
+
+        public TimeTests(string name)
             : base(name)
         {
+            time = new Time();
         }
 
-        public void testTime()
+        public void DefaultConstructor_GlobalTimeCoordinateIsZero()
         {
-            // Arrange
-            Time time = new Time();
-
-            // Act
-
             // Assert
             Assert.AreEqual(0, time.GlobalTimeCoordinate);
         }
 
-        public void testUpdateGameTime()
+        public void UpdateGameTime_GlobalTimeCoordinateIsIncreasedByFactorOf25()
         {
-            // Arrange
-            Time time = new Time();
-
             // Act
             time.UpdateGameTime(12.34f);
 
             // Assert
-            Assert.AreEqual(308, time.GlobalTimeCoordinate);
+            Assert.AreEqual((int)(12.34f * 25), time.GlobalTimeCoordinate);
         }
 
-        public void testJumpTo()
+        public void JumpTo_GlobalTimeCoordinateIsSetToArgument()
         {
-            // Arrange
-            Time time = new Time();
-
             // Act
             time.JumpTo(12.34f);
 

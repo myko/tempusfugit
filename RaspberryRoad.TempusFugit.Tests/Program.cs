@@ -11,18 +11,17 @@ namespace RaspberryRoad.TempusFugit.Tests
         static void Main(string[] args)
         {
             TestSuite suite = new TestSuite();
-
-            suite.add(TestCase.CreateSuite(typeof(TimeTest)));
+            suite.add(TestCase.CreateSuite(typeof(TimeTests)));
+            suite.add(TestCase.CreateSuite(typeof(PositionTests)));
 
             TestResult result = new TestResult();
-
             suite.run(result);
 
             foreach (var failure in result.failures)
-            {
                 Console.WriteLine(failure.message + ": " + failure.exception.Message);
-            }
+
             Console.WriteLine(result.summary());
+            Console.ReadKey();
         }
     }
 }

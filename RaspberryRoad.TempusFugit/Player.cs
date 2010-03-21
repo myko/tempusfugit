@@ -6,21 +6,12 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace RaspberryRoad.TempusFugit
 {
-    public struct Position
-    {
-        public float X;
-
-        public Position(float x)
-        {
-            this.X = x;
-        }
-    }
-
     public class Player
     {
         public const float Speed = 3f;
 
         public Position Position { get; set; }
+        public Position Velocity { get; set; }
         public int Rotation { get; protected set; }
         public bool Exists { get; set; }
 
@@ -32,12 +23,13 @@ namespace RaspberryRoad.TempusFugit
             Exists = true;
 
             Position = new Position();
+            Velocity = new Position();
             Rotation = -1;
         }
 
         public Matrix GetMatrix()
         {
-            return Matrix.CreateRotationY((float)(Math.PI / 2.0 * Rotation)) * Matrix.CreateScale(0.025f) * Matrix.CreateTranslation(Position.X, 0, 0);
+            return Matrix.CreateRotationY((float)(Math.PI / 2.0 * Rotation)) * Matrix.CreateScale(0.025f) * Matrix.CreateTranslation(Position.X, Position.Y, 0);
         }
 
         public virtual Vector3 GetColor()
@@ -53,19 +45,23 @@ namespace RaspberryRoad.TempusFugit
         {
         }
 
-        public void Move(float delta, Level level)
+        public void Move(Position acceleration, float dt, Level level)
         {
-            Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(delta)), true, Matrix.Identity);
+            Velocity = new Position(Math.Max(-Player.Speed, Math.Min(Player.Speed, Velocity.X + acceleration.X * dt - Velocity.X * dt * 2)), Velocity.Y + acceleration.Y * dt);
 
-            if (delta < 0)
+            Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(Velocity.X * dt)), true, Matrix.Identity);
+
+            if (acceleration.X < 0)
                 Rotation = 1;
-            if (delta > 0)
+            if (acceleration.X > 0)
                 Rotation = -1;
 
-            level.FireTriggers(Position, delta);
+            level.FirePositionalTriggers(Position, Velocity.X * dt);
 
-            if (level.CanMove(Position, delta))
-                Position = new Position(Position.X + delta);
+            if (level.CanMove(Position, Velocity.X * dt))
+                Position = new Position(Position.X + Velocity.X * dt, Position.Y + Velocity.Y * dt);
+            else
+                Velocity = new Position(0, 0);
         }
     }
 
@@ -81,10 +77,10 @@ namespace RaspberryRoad.TempusFugit
             if (level.CanMove(Position, delta))
             {
                 Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(delta)), true, Matrix.Identity);
-                Position = new Position(Position.X + delta);
+                Position = new Position(Position.X + delta, Position.Y);
             }
 
-            level.FireTriggers(Position, delta);
+            level.FirePositionalTriggers(Position, delta);
         }
 
         public override Vector3 GetColor()
@@ -136,9 +132,9 @@ namespace RaspberryRoad.TempusFugit
         public void Record(PresentPlayer present, int gtc)
         {
             if (pastPositions.ContainsKey(gtc))
-                pastPositions[gtc] = new Position(present.Position.X);
+                pastPositions[gtc] = new Position(present.Position.X, present.Position.Y);
             else
-                pastPositions.Add(gtc, new Position(present.Position.X));
+                pastPositions.Add(gtc, new Position(present.Position.X, present.Position.Y));
         }
 
         public void Spawn()
