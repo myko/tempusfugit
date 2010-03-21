@@ -7,16 +7,19 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace RaspberryRoad.TempusFugit
 {
-    public class Ground: Entity
+    public class StaticEntity: Entity
     {
-        public Ground(Model model)
+        private Matrix matrix;
+
+        public StaticEntity(Model model, Matrix matrix)
             : base(model)
         {
+            this.matrix = matrix;
         }
 
         public override Matrix GetMatrix()
         {
-            return Matrix.Identity;
+            return matrix;
         }
     }
 }
