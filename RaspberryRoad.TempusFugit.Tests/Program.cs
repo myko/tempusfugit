@@ -18,6 +18,10 @@ namespace RaspberryRoad.TempusFugit.Tests
 
             suite.run(result);
 
+            foreach (var failure in result.failures)
+            {
+                Console.WriteLine(failure.message + ": " + failure.exception.Message);
+            }
             Console.WriteLine(result.summary());
         }
     }
