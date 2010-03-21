@@ -45,24 +45,23 @@ namespace RaspberryRoad.TempusFugit
         {
         }
 
-        public void Move(Position acceleration, Level level)
+        public void Move(Position acceleration, float dt, Level level)
         {
-            Velocity = new Position(Math.Min(Player.Speed, Velocity.X + acceleration.X), Velocity.Y + acceleration.Y);
+            Velocity = new Position(Math.Max(-Player.Speed, Math.Min(Player.Speed, Velocity.X + acceleration.X * dt - Velocity.X * dt * 2)), Velocity.Y + acceleration.Y * dt);
 
-            Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(Velocity.X)), true, Matrix.Identity);
+            Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(Velocity.X * dt)), true, Matrix.Identity);
 
             if (acceleration.X < 0)
                 Rotation = 1;
             if (acceleration.X > 0)
                 Rotation = -1;
 
-            level.FirePositionalTriggers(Position, Velocity.X);
+            level.FirePositionalTriggers(Position, Velocity.X * dt);
 
-            if (level.CanMove(Position, Velocity.X))
-                Position = new Position(Position.X + Velocity.X, Position.Y + Velocity.Y);
-
-            if (Position.Y <= 0)
-                Velocity = new Position(0, Velocity.Y);
+            if (level.CanMove(Position, Velocity.X * dt))
+                Position = new Position(Position.X + Velocity.X * dt, Position.Y + Velocity.Y * dt);
+            else
+                Velocity = new Position(0, 0);
         }
     }
 

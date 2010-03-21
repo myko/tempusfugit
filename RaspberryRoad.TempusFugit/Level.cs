@@ -123,6 +123,7 @@ namespace RaspberryRoad.TempusFugit
                 door2.IsOpen = true;
                 futurePlayer.Exists = false;
                 lockPlayer = true;
+                PresentPlayer.Velocity = new Position(0, 0);
                 specialEffects.Add(new SpecialEffect(timeTravelSphere, timeMachinePosition, null, unlockPlayerTrigger,
                     t => Matrix.CreateScale(1.65f),
                     t => (float)Math.Sin(t / 2.5 * Math.PI)));
@@ -146,18 +147,18 @@ namespace RaspberryRoad.TempusFugit
             if (!lockPlayer)
             {
                 if (state.IsKeyDown(Keys.Right))
-                    vx = dt;
+                    vx = 10;
 
                 if (state.IsKeyDown(Keys.Left))
-                    vx = -dt;
+                    vx = -10;
             }
 
-            if (PresentPlayer.Position.Y > 0)
-                vy -= dt;
-            else if (state.IsKeyDown(Keys.Up))
-                vy = Player.Speed * 4.5f * dt;
+            //if (PresentPlayer.Position.Y > 0)
+            //    vy -= dt;
+            //else if (!lockPlayer && state.IsKeyDown(Keys.Up))
+            //    vy = Player.Speed * 4.5f * dt;
 
-            PresentPlayer.Move(new Position(Player.Speed * vx, vy), this);
+            PresentPlayer.Move(new Position(vx, vy), dt, this);
             if (PresentPlayer.Position.Y < 0)
                 PresentPlayer.Position = new Position(PresentPlayer.Position.X, 0);
 
