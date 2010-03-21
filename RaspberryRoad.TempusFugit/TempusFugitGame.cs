@@ -58,6 +58,7 @@ namespace RaspberryRoad.TempusFugit
             LoadModel("ground");
             LoadModel("timetravelsphere");
             LoadModel("travelpad");
+            LoadModel("button");
 
             ResetWorld();
         }
@@ -127,7 +128,7 @@ namespace RaspberryRoad.TempusFugit
             // TODO: Abstract away into a Camera class
             float aspectRatio = graphics.GraphicsDevice.Viewport.Width / (float)graphics.GraphicsDevice.Viewport.Height;
             Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45.0f), aspectRatio, 1.0f, 10000.0f);
-            Matrix view = Matrix.CreateLookAt(new Vector3(level.PresentPlayer.Position.X, 3, 19), new Vector3(level.PresentPlayer.Position.X, 2, 0), Vector3.Up);
+            Matrix view = Matrix.CreateLookAt(new Vector3(level.PresentPlayer.Position.X, 3, 26), new Vector3(level.PresentPlayer.Position.X, 2, 0), Vector3.Up);
 
             foreach (var player in level.GetActivePlayers())
                 DrawAnimatedModel(player.Model, projection, view, player.GetMatrix(), player.GetColor());

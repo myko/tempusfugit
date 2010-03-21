@@ -15,6 +15,7 @@ namespace RaspberryRoad.TempusFugit
         // TODO: Don't keep a static list of all our geometry
         private StaticEntity ground;
         private StaticEntity travelPad;
+        private StaticEntity button;
         private Door door1;
         private Door door2;
 
@@ -40,14 +41,15 @@ namespace RaspberryRoad.TempusFugit
             Model groundModel = models["ground"];
             Model doorModel = models["door"];
             Model travelPadModel = models["travelpad"];
+            Model buttonModel = models["button"];
 
             Time = new Time();
 
             PresentPlayer = new PresentPlayer(playerModel);
-            PresentPlayer.Position = new Position(-5);
+            PresentPlayer.Position = new Position(-5, 0);
 
             futurePlayer = new FuturePlayer(playerModel);
-            futurePlayer.Position = new Position(4);
+            futurePlayer.Position = new Position(4, 0);
             futurePlayer.Exists = false;
 
             pastPlayer = new PastPlayer(playerModel);
@@ -55,13 +57,14 @@ namespace RaspberryRoad.TempusFugit
 
             ground = new StaticEntity(groundModel, Matrix.Identity);
             travelPad = new StaticEntity(travelPadModel, Matrix.CreateTranslation(4, 0, 0));
+            button = new StaticEntity(buttonModel, Matrix.CreateScale(0.5f) * Matrix.CreateTranslation(10, 1, -1.7f));
 
             door1 = new Door(doorModel);
-            door1.Position = new Position(0);
+            door1.Position = new Position(0, 0);
             door1.IsOpen = false;
 
             door2 = new Door(doorModel);
-            door2.Position = new Position(8);
+            door2.Position = new Position(8, 0);
             door2.IsOpen = true;
 
             Position doorsButtonPosition = new Position() { X = 10 };
@@ -127,12 +130,25 @@ namespace RaspberryRoad.TempusFugit
         {
             Time.UpdateGameTime(dt);
 
+            float vx = 0f;
+            float vy = 0f;
+
             if (state.IsKeyDown(Keys.Right))
-                MovePlayer(dt);
+                vx = dt;
 
             if (state.IsKeyDown(Keys.Left))
-                MovePlayer(-dt);
-            
+                vx = -dt;
+
+            if (PresentPlayer.Position.Y > 0)
+                vy -= dt;
+            else if (state.IsKeyDown(Keys.Up))
+                vy = Player.Speed * 4.5f * dt;
+
+            PresentPlayer.Move(new Position(Player.Speed * vx, vy), this);
+            if (PresentPlayer.Position.Y < 0)
+                PresentPlayer.Position = new Position(PresentPlayer.Position.X, 0);
+
+            // TODO: Move this to a "script"
             if (futurePlayer.Exists)
                 MoveFuturePlayer(dt);
 
@@ -146,11 +162,6 @@ namespace RaspberryRoad.TempusFugit
                 return false;
 
             return true;
-        }
-
-        public void MovePlayer(float delta)
-        {
-            PresentPlayer.Move(Player.Speed * delta, this);
         }
 
         public void MoveFuturePlayer(float delta)
@@ -170,6 +181,7 @@ namespace RaspberryRoad.TempusFugit
         {
             yield return ground;
             yield return travelPad;
+            yield return button;
             yield return door1;
             yield return door2;
         }
@@ -186,7 +198,7 @@ namespace RaspberryRoad.TempusFugit
 
         public bool CanMove(Position position, float delta)
         {
-            return CanMove(position, new Position(position.X + delta));
+            return CanMove(position, new Position(position.X + delta, position.Y));
         }
 
         public bool CanMove(Position position, Position newPosition)
@@ -194,7 +206,7 @@ namespace RaspberryRoad.TempusFugit
             return (((newPosition.X) > -10) && ((newPosition.X) < 14) && door1.CanPass(position, newPosition) && door2.CanPass(position, newPosition));
         }
 
-        public void FireTriggers(Position Position, float delta)
+        public void FirePositionalTriggers(Position Position, float delta)
         {
             if (timeTravelArrivalEffectTrigger.IsTriggeredBy(Position, delta))
                 timeTravelArrivalEffectTrigger.Fire();
