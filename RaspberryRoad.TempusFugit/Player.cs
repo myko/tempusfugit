@@ -10,8 +10,8 @@ namespace RaspberryRoad.TempusFugit
     {
         public const float Speed = 3f;
 
-        public Position Position { get; set; }
-        public Position Velocity { get; set; }
+        public Vector2 Position { get; set; }
+        public Vector2 Velocity { get; set; }
         public int Rotation { get; protected set; }
         public bool Exists { get; set; }
 
@@ -22,8 +22,8 @@ namespace RaspberryRoad.TempusFugit
             this.Model = new AnimatedModel(model);
             Exists = true;
 
-            Position = new Position();
-            Velocity = new Position();
+            Position = new Vector2();
+            Velocity = new Vector2();
             Rotation = -1;
         }
 
@@ -45,9 +45,9 @@ namespace RaspberryRoad.TempusFugit
         {
         }
 
-        public void Move(Position acceleration, float dt, Level level)
+        public void Move(Vector2 acceleration, float dt, Level level)
         {
-            Velocity = new Position(Math.Max(-Player.Speed, Math.Min(Player.Speed, Velocity.X + acceleration.X * dt - Velocity.X * dt * 2)), Velocity.Y + acceleration.Y * dt);
+            Velocity = new Vector2(Math.Max(-Player.Speed, Math.Min(Player.Speed, Velocity.X + acceleration.X * dt - Velocity.X * dt * 2)), Velocity.Y + acceleration.Y * dt);
 
             Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(Velocity.X * dt)), true, Matrix.Identity);
 
@@ -59,9 +59,9 @@ namespace RaspberryRoad.TempusFugit
             level.FirePositionalTriggers(Position, Velocity.X * dt);
 
             if (level.CanMove(Position, Velocity.X * dt))
-                Position = new Position(Position.X + Velocity.X * dt, Position.Y + Velocity.Y * dt);
+                Position = new Vector2(Position.X + Velocity.X * dt, Position.Y + Velocity.Y * dt);
             else
-                Velocity = new Position(0, 0);
+                Velocity = new Vector2(0, 0);
         }
     }
 
@@ -77,7 +77,7 @@ namespace RaspberryRoad.TempusFugit
             if (level.CanMove(Position, delta))
             {
                 Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(delta)), true, Matrix.Identity);
-                Position = new Position(Position.X + delta, Position.Y);
+                Position = new Vector2(Position.X + delta, Position.Y);
             }
 
             level.FirePositionalTriggers(Position, delta);
@@ -91,7 +91,7 @@ namespace RaspberryRoad.TempusFugit
 
     public class PastPlayer : Player
     {
-        private Dictionary<int, Position> pastPositions = new Dictionary<int, Position>();
+        private Dictionary<int, Vector2> pastPositions = new Dictionary<int, Vector2>();
         private float currentFloatGtc = 0f;
         private int currentGtc = 0;
 
@@ -124,7 +124,7 @@ namespace RaspberryRoad.TempusFugit
             }
 
             float a = 1f - (currentFloatGtc - currentGtc);
-            Position = new Position() { X = pastPositions[currentGtc].X * a + pastPositions[Math.Min(currentGtc + 1, pastPositions.Keys.Max())].X * (1 - a) };
+            Position = new Vector2() { X = pastPositions[currentGtc].X * a + pastPositions[Math.Min(currentGtc + 1, pastPositions.Keys.Max())].X * (1 - a) };
 
             return true;
         }
@@ -132,9 +132,9 @@ namespace RaspberryRoad.TempusFugit
         public void Record(PresentPlayer present, int gtc)
         {
             if (pastPositions.ContainsKey(gtc))
-                pastPositions[gtc] = new Position(present.Position.X, present.Position.Y);
+                pastPositions[gtc] = new Vector2(present.Position.X, present.Position.Y);
             else
-                pastPositions.Add(gtc, new Position(present.Position.X, present.Position.Y));
+                pastPositions.Add(gtc, new Vector2(present.Position.X, present.Position.Y));
         }
 
         public void Spawn()

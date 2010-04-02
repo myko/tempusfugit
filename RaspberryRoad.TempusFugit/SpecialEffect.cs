@@ -11,14 +11,14 @@ namespace RaspberryRoad.TempusFugit
     {
         float time = 0f;
         Model model;
-        Position position;
+        Vector2 position;
         Trigger spawnTrigger;
         Trigger moveTrigger;
         Func<float, Matrix> scale;
         Func<float, float> alpha;
         Random r;
 
-        public SpecialEffect(Model model, Position position, Trigger spawnTrigger, Trigger moveTrigger, Func<float, Matrix> scale, Func<float, float> alpha)
+        public SpecialEffect(Model model, Vector2 position, Trigger spawnTrigger, Trigger moveTrigger, Func<float, Matrix> scale, Func<float, float> alpha)
         {
             this.model = model;
             this.position = position;

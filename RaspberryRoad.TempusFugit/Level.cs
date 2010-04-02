@@ -49,10 +49,10 @@ namespace RaspberryRoad.TempusFugit
             Time = new Time();
 
             PresentPlayer = new PresentPlayer(playerModel);
-            PresentPlayer.Position = new Position(-5, 0);
+            PresentPlayer.Position = new Vector2(-5, 0);
 
             futurePlayer = new FuturePlayer(playerModel);
-            futurePlayer.Position = new Position(4, 0);
+            futurePlayer.Position = new Vector2(4, 0);
             futurePlayer.Exists = false;
 
             pastPlayer = new PastPlayer(playerModel);
@@ -63,15 +63,15 @@ namespace RaspberryRoad.TempusFugit
             button = new StaticEntity(buttonModel, Matrix.CreateScale(0.5f) * Matrix.CreateTranslation(10, 1, -1.7f));
 
             door1 = new Door(doorModel);
-            door1.Position = new Position(0, 0);
+            door1.Position = new Vector2(0, 0);
             door1.IsOpen = false;
 
             door2 = new Door(doorModel);
-            door2.Position = new Position(8, 0);
+            door2.Position = new Vector2(8, 0);
             door2.IsOpen = true;
 
-            Position doorsButtonPosition = new Position() { X = 10 };
-            Position timeMachinePosition = new Position() { X = 4f };
+            Vector2 doorsButtonPosition = new Vector2() { X = 10 };
+            Vector2 timeMachinePosition = new Vector2() { X = 4f };
 
             toggleDoorsTrigger = new PositionalTrigger() { Position = doorsButtonPosition };
             toggleDoorsTrigger.Actions.Add(() =>
@@ -91,7 +91,7 @@ namespace RaspberryRoad.TempusFugit
                 pastPlayer.Exists = false;
             });
 
-            timeTravelArrivalEffectTrigger = new PositionalTrigger() { Position = new Position() { X = -2 }, OneTime = true };
+            timeTravelArrivalEffectTrigger = new PositionalTrigger() { Position = new Vector2() { X = -2 }, OneTime = true };
             timeTravelArrivalEffectTrigger.Actions.Add(() =>
             {
                 specialEffects.Add(new SpecialEffect(timeTravelSphere, timeMachinePosition, spawnFuturePlayerTrigger, moveFuturePlayerTrigger, 
@@ -102,7 +102,7 @@ namespace RaspberryRoad.TempusFugit
             timeTravelDepartureEffectTrigger = new Trigger() { OneTime = true };
             timeTravelDepartureEffectTrigger.Actions.Add(() =>
             {
-                specialEffects.Add(new SpecialEffect(timeTravelSphere, new Position() { X = pastPlayer.Position.X }, removePastPlayerTrigger, null, 
+                specialEffects.Add(new SpecialEffect(timeTravelSphere, new Vector2() { X = pastPlayer.Position.X }, removePastPlayerTrigger, null, 
                     t => Matrix.CreateScale(Math.Min(2.5f - t, 1f) * 1.65f),
                     t => Math.Min(1f, t)));
             });
@@ -123,7 +123,7 @@ namespace RaspberryRoad.TempusFugit
                 door2.IsOpen = true;
                 futurePlayer.Exists = false;
                 lockPlayer = true;
-                PresentPlayer.Velocity = new Position(0, 0);
+                PresentPlayer.Velocity = new Vector2(0, 0);
                 specialEffects.Add(new SpecialEffect(timeTravelSphere, timeMachinePosition, null, unlockPlayerTrigger,
                     t => Matrix.CreateScale(1.65f),
                     t => (float)Math.Sin(t / 2.5 * Math.PI)));
@@ -158,9 +158,9 @@ namespace RaspberryRoad.TempusFugit
             //else if (!lockPlayer && state.IsKeyDown(Keys.Up))
             //    vy = Player.Speed * 4.5f * dt;
 
-            PresentPlayer.Move(new Position(vx, vy), dt, this);
+            PresentPlayer.Move(new Vector2(vx, vy), dt, this);
             if (PresentPlayer.Position.Y < 0)
-                PresentPlayer.Position = new Position(PresentPlayer.Position.X, 0);
+                PresentPlayer.Position = new Vector2(PresentPlayer.Position.X, 0);
 
             // TODO: Move this to a "script"
             if (futurePlayer.Exists)
@@ -210,17 +210,17 @@ namespace RaspberryRoad.TempusFugit
                 yield return pastPlayer;
         }
 
-        public bool CanMove(Position position, float delta)
+        public bool CanMove(Vector2 position, float delta)
         {
-            return CanMove(position, new Position(position.X + delta, position.Y));
+            return CanMove(position, new Vector2(position.X + delta, position.Y));
         }
 
-        public bool CanMove(Position position, Position newPosition)
+        public bool CanMove(Vector2 position, Vector2 newPosition)
         {
             return (((newPosition.X) > -10) && ((newPosition.X) < 14) && door1.CanPass(position, newPosition) && door2.CanPass(position, newPosition));
         }
 
-        public void FirePositionalTriggers(Position Position, float delta)
+        public void FirePositionalTriggers(Vector2 Position, float delta)
         {
             if (timeTravelArrivalEffectTrigger.IsTriggeredBy(Position, delta))
                 timeTravelArrivalEffectTrigger.Fire();

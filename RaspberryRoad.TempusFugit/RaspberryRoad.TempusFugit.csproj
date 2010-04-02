@@ -86,7 +86,6 @@
   <ItemGroup>
     <Compile Include="Door.cs" />
     <Compile Include="Entity.cs" />
-    <Compile Include="Position.cs" />
     <Compile Include="StaticEntity.cs" />
     <Compile Include="Level.cs" />
     <Compile Include="AnimatedModel.cs" />

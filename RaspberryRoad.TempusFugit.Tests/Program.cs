@@ -12,7 +12,6 @@ namespace RaspberryRoad.TempusFugit.Tests
         {
             TestSuite suite = new TestSuite();
             suite.add(TestCase.CreateSuite(typeof(TimeTests)));
-            suite.add(TestCase.CreateSuite(typeof(PositionTests)));
 
             TestResult result = new TestResult();
             suite.run(result);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 
 namespace RaspberryRoad.TempusFugit
 {
@@ -30,13 +31,13 @@ namespace RaspberryRoad.TempusFugit
 
     public class PositionalTrigger : Trigger
     {
-        public Position Position { get; set; }
+        public Vector2 Position { get; set; }
 
         public PositionalTrigger()
         {
         }
 
-        public bool IsTriggeredBy(Position objectPosition, float delta)
+        public bool IsTriggeredBy(Vector2 objectPosition, float delta)
         {
             return ((objectPosition.X < Position.X) && (objectPosition.X + delta > Position.X)) || ((objectPosition.X > Position.X) && (objectPosition.X + delta < Position.X));
         }

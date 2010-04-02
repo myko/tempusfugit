@@ -5,13 +5,13 @@ namespace RaspberryRoad.TempusFugit
 {
     public class Door: Entity
     {
-        public Position Position { get; set; }
+        public Vector2 Position { get; set; }
         public bool IsOpen { get; set; }
 
         public Door(Model model)
             : base(model)
         {
-            Position = new Position();
+            Position = new Vector2();
         }
 
         public void Toggle()
@@ -19,12 +19,12 @@ namespace RaspberryRoad.TempusFugit
             IsOpen = !IsOpen;
         }
 
-        public bool CanPass(Position objectPosition, float delta)
+        public bool CanPass(Vector2 objectPosition, float delta)
         {
-            return CanPass(objectPosition, new Position() { X = objectPosition.X + delta });
+            return CanPass(objectPosition, new Vector2() { X = objectPosition.X + delta });
         }
 
-        public bool CanPass(Position currentPosition, Position newPosition)
+        public bool CanPass(Vector2 currentPosition, Vector2 newPosition)
         {
             if (!IsOpen)
             {
