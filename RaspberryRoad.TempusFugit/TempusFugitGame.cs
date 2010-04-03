@@ -118,6 +118,8 @@ namespace RaspberryRoad.TempusFugit
 
             spriteBatch.Begin(SpriteBlendMode.AlphaBlend, SpriteSortMode.Immediate, SaveStateMode.SaveState);
             spriteBatch.DrawString(font, level.Time.GlobalTimeCoordinate.ToString() + ", " + level.TargetGtc.ToString(), Vector2.Zero, Color.White);
+            spriteBatch.DrawString(font, level.PresentPlayer.Velocity.ToString(), new Vector2(0, 16f), Color.White);
+            spriteBatch.DrawString(font, (level.PresentPlayer.IsGrounded ? "IsGrounded " : "") + (level.PresentPlayer.IsFalling ? "IsFalling" : ""), new Vector2(0, 32f), Color.White);
             spriteBatch.End();
 
             base.Draw(gameTime);

@@ -136,6 +136,7 @@ namespace RaspberryRoad.TempusFugit
             });
         }
 
+        bool holdingJumpDuringFall = false;
         // TODO: Don't pass keyboard state directly, abstract it away
         public bool Update(float dt, KeyboardState state)
         {
@@ -147,20 +148,25 @@ namespace RaspberryRoad.TempusFugit
             if (!lockPlayer)
             {
                 if (state.IsKeyDown(Keys.Right))
-                    vx = 10;
+                    vx = 50;
 
                 if (state.IsKeyDown(Keys.Left))
-                    vx = -10;
+                    vx = -50;
+
+                if (PresentPlayer.IsFalling && state.IsKeyDown(Keys.Up))
+                    holdingJumpDuringFall = true;
+
+                if (PresentPlayer.IsGrounded && state.IsKeyUp(Keys.Up))
+                    holdingJumpDuringFall = false;
+
+                if (!holdingJumpDuringFall && !PresentPlayer.IsFalling && state.IsKeyDown(Keys.Up))
+                    vy = PresentPlayer.IsGrounded ? 900 : 22;
             }
 
-            //if (PresentPlayer.Position.Y > 0)
-            //    vy -= dt;
-            //else if (!lockPlayer && state.IsKeyDown(Keys.Up))
-            //    vy = Player.Speed * 4.5f * dt;
+            if (!PresentPlayer.IsGrounded)
+                vy -= 58f;
 
             PresentPlayer.Move(new Vector2(vx, vy), dt, this);
-            if (PresentPlayer.Position.Y < 0)
-                PresentPlayer.Position = new Vector2(PresentPlayer.Position.X, 0);
 
             // TODO: Move this to a "script"
             if (futurePlayer.Exists)
@@ -217,7 +223,7 @@ namespace RaspberryRoad.TempusFugit
 
         public bool CanMove(Vector2 position, Vector2 newPosition)
         {
-            return (((newPosition.X) > -10) && ((newPosition.X) < 14) && door1.CanPass(position, newPosition) && door2.CanPass(position, newPosition));
+            return (door1.CanPass(position, newPosition) && door2.CanPass(position, newPosition));
         }
 
         public void FirePositionalTriggers(Vector2 Position, float delta)
@@ -230,6 +236,29 @@ namespace RaspberryRoad.TempusFugit
 
             if (timeTravelTrigger.IsTriggeredBy(Position, delta))
                 timeTravelTrigger.Fire();
+        }
+
+        public Vector2 ModifyVelocity(Vector2 Position, Vector2 Velocity, float dt)
+        {
+            float vy = Velocity.Y;
+            float vx = Velocity.X;
+            
+            if (!CanMove(Position, vx * dt))
+                vx = 0;
+
+            // Left edge
+            if ((Position.X + vx * dt) < -30 && vx < 0)
+                vx = (-30 - Position.X) / dt;
+
+            // Right edge
+            if ((Position.X + vx * dt) > 50 && vx > 0)
+                vx = (50 - Position.X) / dt;
+
+            // Ground
+            if ((Position.Y + vy * dt) < 0 && vy < 0)
+                vy = (0 - Position.Y) / dt;
+
+            return new Vector2(vx, vy);
         }
     }
 }
