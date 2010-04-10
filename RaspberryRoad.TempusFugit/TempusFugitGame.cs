@@ -10,6 +10,8 @@ namespace RaspberryRoad.TempusFugit
     /// </summary>
     public class TempusFugitGame : Microsoft.Xna.Framework.Game
     {
+        // comment from iphone
+
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         
