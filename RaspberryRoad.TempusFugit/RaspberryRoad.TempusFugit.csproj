@@ -71,6 +71,8 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml">
       <Private>False</Private>
     </Reference>
@@ -146,6 +148,10 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\RaspberryRoad.Xna.Collision\RaspberryRoad.Xna.Collision\RaspberryRoad.Xna.Collision.csproj">
+      <Project>{C57B0216-FF99-4401-8378-8202D2D2FE50}</Project>
+      <Name>RaspberryRoad.Xna.Collision</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SkinnedModel\SkinnedModelWindows.csproj">
       <Project>{0D41E29B-829F-4255-BCA5-64DC2677DA6D}</Project>
       <Name>SkinnedModelWindows</Name>

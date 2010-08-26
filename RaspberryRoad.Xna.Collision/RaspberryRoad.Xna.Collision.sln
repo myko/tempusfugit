@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C# Express 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaspberryRoad.Xna.Collision", "RaspberryRoad.Xna.Collision\RaspberryRoad.Xna.Collision.csproj", "{C57B0216-FF99-4401-8378-8202D2D2FE50}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaspberryRoad.Xna.Collision.Tests", "RaspberryRoad.Xna.Collision.Tests\RaspberryRoad.Xna.Collision.Tests.csproj", "{F61AE286-2640-4F11-8E4C-EF908F725136}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C57B0216-FF99-4401-8378-8202D2D2FE50}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C57B0216-FF99-4401-8378-8202D2D2FE50}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C57B0216-FF99-4401-8378-8202D2D2FE50}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C57B0216-FF99-4401-8378-8202D2D2FE50}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F61AE286-2640-4F11-8E4C-EF908F725136}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F61AE286-2640-4F11-8E4C-EF908F725136}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F61AE286-2640-4F11-8E4C-EF908F725136}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F61AE286-2640-4F11-8E4C-EF908F725136}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

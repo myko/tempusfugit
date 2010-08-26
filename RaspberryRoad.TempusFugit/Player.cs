@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using RaspberryRoad.Xna.Collision;
 
 namespace RaspberryRoad.TempusFugit
 {
@@ -49,26 +50,52 @@ namespace RaspberryRoad.TempusFugit
             IsGrounded = true;
         }
 
+        public Rectangle2 GetRectangle()
+        {
+            return new Rectangle2(Position - new Vector2(0.2f, -2), Position + new Vector2(0.2f, 0));
+        }
+
         public void Move(Vector2 acceleration, float dt, Level level)
         {
-            Vector2 dragCoefficient = new Vector2(2.6f, 0.1f);
+            Vector2 dragCoefficient = new Vector2(2.3f, 0.1f);
             Vector2 drag = new Vector2(dragCoefficient.X * Velocity.X * Math.Abs(Velocity.X), dragCoefficient.Y * Velocity.Y * Math.Abs(Velocity.Y));
+            if (IsGrounded)
+                drag *= 1.75f;
             Velocity = Velocity + acceleration * dt - drag * dt;
             
             if (IsGrounded)
-                Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(Velocity.X * dt)), true, Matrix.Identity);
+                Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(Velocity.X * 0.66f * dt)), true, Matrix.Identity);
 
             if (Velocity.X < 0)
                 Rotation = 1;
             if (Velocity.X > 0)
                 Rotation = -1;
-            if (Velocity.Length() < 0.40f)
+            if (Velocity.Length() < 0.50f)
                 Velocity = Vector2.Zero;
 
             level.FirePositionalTriggers(Position, Velocity.X * dt);
-            Velocity = level.ModifyVelocity(Position, Velocity, dt);
-            Position = Position + Velocity * dt;
-            IsGrounded = Position.Y <= 0;
+
+            var v = level.GetFinalVelocity(GetRectangle(), Velocity * dt);
+
+            // Reduce jiggle
+            if (Math.Abs(v.Y) < 0.001f)
+                v.Y = 0;
+            if (Math.Abs(v.X) < 0.001f)
+                v.X = 0;
+
+            // Reduce jiggle
+            if (Math.Abs(Velocity.Y) < 0.3f)
+                Velocity = new Vector2(Velocity.X, 0);
+            if (Math.Abs(Velocity.X) < 0.3f)
+                Velocity = new Vector2(0, Velocity.Y);
+
+            Position = Position + v;
+
+            var crv = level.GetCollisionResolvingVector(GetRectangle());
+            Position = Position + crv;
+
+            IsGrounded = level.IsGrounded(GetRectangle()) && !(Velocity.Y > 0);
+
             IsFalling = !IsGrounded && Velocity.Y < 0;
         }
     }
@@ -115,7 +142,6 @@ namespace RaspberryRoad.TempusFugit
 
             if (currentGtc >= pastPositions.Keys.Max())
                 return false;
-
 
             if ((level.CanMove(pastPositions[currentGtc], pastPositions[currentGtc + 1])))
             {

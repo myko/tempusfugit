@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkinnedModelPipeline", "..\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaspberryRoad.TempusFugit.Tests", "..\RaspberryRoad.TempusFugit.Tests\RaspberryRoad.TempusFugit.Tests.csproj", "{153DEAB8-46B5-4C64-AF2F-40832543D617}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaspberryRoad.Xna.Collision", "..\RaspberryRoad.Xna.Collision\RaspberryRoad.Xna.Collision\RaspberryRoad.Xna.Collision.csproj", "{C57B0216-FF99-4401-8378-8202D2D2FE50}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -82,6 +84,18 @@ Global
 		{68689047-5F04-43EE-9238-89D08FF757D4}.Release|Mixed Platforms.ActiveCfg = Release|x86
 		{68689047-5F04-43EE-9238-89D08FF757D4}.Release|x86.ActiveCfg = Release|x86
 		{68689047-5F04-43EE-9238-89D08FF757D4}.Release|Xbox 360.ActiveCfg = Release|x86
+		{C57B0216-FF99-4401-8378-8202D2D2FE50}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C57B0216-FF99-4401-8378-8202D2D2FE50}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C57B0216-FF99-4401-8378-8202D2D2FE50}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{C57B0216-FF99-4401-8378-8202D2D2FE50}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{C57B0216-FF99-4401-8378-8202D2D2FE50}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C57B0216-FF99-4401-8378-8202D2D2FE50}.Debug|Xbox 360.ActiveCfg = Debug|Any CPU
+		{C57B0216-FF99-4401-8378-8202D2D2FE50}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C57B0216-FF99-4401-8378-8202D2D2FE50}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C57B0216-FF99-4401-8378-8202D2D2FE50}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{C57B0216-FF99-4401-8378-8202D2D2FE50}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{C57B0216-FF99-4401-8378-8202D2D2FE50}.Release|x86.ActiveCfg = Release|Any CPU
+		{C57B0216-FF99-4401-8378-8202D2D2FE50}.Release|Xbox 360.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

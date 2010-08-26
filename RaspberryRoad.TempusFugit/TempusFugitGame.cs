@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -20,6 +21,9 @@ namespace RaspberryRoad.TempusFugit
         
         List<SpecialEffect> specialEffects;
 
+        BasicEffect lineEffect;
+        VertexDeclaration lineVertexDeclaration;
+
         public TempusFugitGame()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -35,6 +39,15 @@ namespace RaspberryRoad.TempusFugit
         /// </summary>
         protected override void Initialize()
         {
+            // Not part of the Effect per se, but is required for drawing            
+            lineVertexDeclaration = new VertexDeclaration(                                                        
+                graphics.GraphicsDevice,                                                        
+                VertexPositionNormalTexture.VertexElements                                                     
+                );
+
+            lineEffect = new BasicEffect(graphics.GraphicsDevice, null);
+            lineEffect.DiffuseColor = new Vector3(1.0f, 1.0f, 1.0f);
+
             base.Initialize();
         }
 
@@ -118,8 +131,10 @@ namespace RaspberryRoad.TempusFugit
 
             spriteBatch.Begin(SpriteBlendMode.AlphaBlend, SpriteSortMode.Immediate, SaveStateMode.SaveState);
             spriteBatch.DrawString(font, level.Time.GlobalTimeCoordinate.ToString() + ", " + level.TargetGtc.ToString(), Vector2.Zero, Color.White);
-            spriteBatch.DrawString(font, level.PresentPlayer.Velocity.ToString(), new Vector2(0, 16f), Color.White);
-            spriteBatch.DrawString(font, (level.PresentPlayer.IsGrounded ? "IsGrounded " : "") + (level.PresentPlayer.IsFalling ? "IsFalling" : ""), new Vector2(0, 32f), Color.White);
+            spriteBatch.DrawString(font, level.PresentPlayer.Position.ToString(), new Vector2(0, 16f), Color.White);
+            spriteBatch.DrawString(font, level.PresentPlayer.Velocity.ToString(), new Vector2(0, 32f), Color.White);
+            spriteBatch.DrawString(font, (level.PresentPlayer.IsGrounded ? "IsGrounded " : ""), new Vector2(0, 48f), Color.White);
+            spriteBatch.DrawString(font, (level.PresentPlayer.IsFalling ? "IsFalling" : ""), new Vector2(0, 64f), Color.White);
             spriteBatch.End();
 
             base.Draw(gameTime);
@@ -130,7 +145,7 @@ namespace RaspberryRoad.TempusFugit
             // TODO: Abstract away into a Camera class
             float aspectRatio = graphics.GraphicsDevice.Viewport.Width / (float)graphics.GraphicsDevice.Viewport.Height;
             Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45.0f), aspectRatio, 1.0f, 10000.0f);
-            Matrix view = Matrix.CreateLookAt(new Vector3(level.PresentPlayer.Position.X, 3, 26), new Vector3(level.PresentPlayer.Position.X, 2, 0), Vector3.Up);
+            Matrix view = Matrix.CreateLookAt(new Vector3(level.PresentPlayer.Position.X, level.PresentPlayer.Position.Y, 26), new Vector3(level.PresentPlayer.Position.X, 1, 0), Vector3.Up);
 
             foreach (var player in level.GetActivePlayers())
                 DrawAnimatedModel(player.Model, projection, view, player.GetMatrix(), player.GetColor());
@@ -143,7 +158,35 @@ namespace RaspberryRoad.TempusFugit
             foreach (var effect in specialEffects)
                 DrawModel(effect.GetModel(), projection, view, effect.GetMatrix(), Vector3.One, effect.GetAlpha());
 
+            DrawCollisionGeometry(projection, view);
+
             DisableTransparency();
+        }
+
+        private void DrawCollisionGeometry(Matrix projection, Matrix view)
+        {
+            graphics.GraphicsDevice.RenderState.DepthBufferEnable = false;
+            graphics.GraphicsDevice.VertexDeclaration = lineVertexDeclaration;
+
+            lineEffect.Begin();
+            lineEffect.World = Matrix.Identity;
+            lineEffect.View = view;
+            lineEffect.Projection = projection;
+
+            foreach (EffectPass pass in lineEffect.CurrentTechnique.Passes)
+            {
+                pass.Begin();
+
+                var lines = level.GetLineVertices().ToArray();
+
+                graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.LineList, lines, 0, lines.Length / 2);
+
+                pass.End();
+            }
+
+            lineEffect.End();
+
+            graphics.GraphicsDevice.RenderState.DepthBufferEnable = true;
         }
 
         private void EnableTransparency()

@@ -1,5 +1,7 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using RaspberryRoad.Xna.Collision;
 
 namespace RaspberryRoad.TempusFugit
 {
@@ -19,28 +21,20 @@ namespace RaspberryRoad.TempusFugit
             IsOpen = !IsOpen;
         }
 
-        public bool CanPass(Vector2 objectPosition, float delta)
-        {
-            return CanPass(objectPosition, new Vector2() { X = objectPosition.X + delta });
-        }
-
-        public bool CanPass(Vector2 currentPosition, Vector2 newPosition)
-        {
-            if (!IsOpen)
-            {
-                if ((currentPosition.X < this.Position.X) && (newPosition.X > this.Position.X))
-                    return false;
-
-                if ((currentPosition.X > this.Position.X) && (newPosition.X < this.Position.X))
-                    return false;
-            }
-
-            return true;
-        }
-
         public override Matrix GetMatrix()
         {
             return Matrix.CreateTranslation(Position.X, 2, IsOpen ? -3.1f : 1);
+        }
+
+        public override IEnumerable<Line2> GetCollisionGeometry()
+        {
+            if (!IsOpen)
+            {
+                yield return new Line2(new Vector2(Position.X - 0.5f, 0), new Vector2(Position.X - 0.5f, 4));
+                yield return new Line2(new Vector2(Position.X + 0.5f, 4), new Vector2(Position.X + 0.5f, 0));
+                yield return new Line2(new Vector2(Position.X - 0.5f, 4), new Vector2(Position.X + 0.5f, 4));
+                yield return new Line2(new Vector2(Position.X + 0.5f, 0), new Vector2(Position.X - 0.5f, 0));
+            }
         }
     }
 }

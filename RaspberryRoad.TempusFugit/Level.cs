@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using RaspberryRoad.Xna.Collision;
 
 namespace RaspberryRoad.TempusFugit
 {
@@ -13,6 +15,7 @@ namespace RaspberryRoad.TempusFugit
         bool futurePlayerMoving = false;
 
         // TODO: Don't keep a static list of all our geometry
+        private List<Line2> lines;
         private StaticEntity ground;
         private StaticEntity travelPad;
         private StaticEntity button;
@@ -48,8 +51,14 @@ namespace RaspberryRoad.TempusFugit
 
             Time = new Time();
 
+            lines = new List<Line2>();
+            lines.Add(new Line2(new Vector2(-10, 0), new Vector2(15, 0)));
+            lines.Add(new Line2(new Vector2(-10, 4), new Vector2(-10, 0)));
+            lines.Add(new Line2(new Vector2(15, 4), new Vector2(-10, 4)));
+            lines.Add(new Line2(new Vector2(15, 0), new Vector2(15, 4)));
+            
             PresentPlayer = new PresentPlayer(playerModel);
-            PresentPlayer.Position = new Vector2(-5, 0);
+            PresentPlayer.Position = new Vector2(-5, 2);
 
             futurePlayer = new FuturePlayer(playerModel);
             futurePlayer.Position = new Vector2(4, 0);
@@ -136,7 +145,7 @@ namespace RaspberryRoad.TempusFugit
             });
         }
 
-        bool holdingJumpDuringFall = false;
+        float? holdingStarted = null;
         // TODO: Don't pass keyboard state directly, abstract it away
         public bool Update(float dt, KeyboardState state)
         {
@@ -148,25 +157,25 @@ namespace RaspberryRoad.TempusFugit
             if (!lockPlayer)
             {
                 if (state.IsKeyDown(Keys.Right))
-                    vx = 50;
+                    vx = 75;
 
                 if (state.IsKeyDown(Keys.Left))
-                    vx = -50;
+                    vx = -75;
 
-                if (PresentPlayer.IsFalling && state.IsKeyDown(Keys.Up))
-                    holdingJumpDuringFall = true;
-
-                if (PresentPlayer.IsGrounded && state.IsKeyUp(Keys.Up))
-                    holdingJumpDuringFall = false;
-
-                if (!holdingJumpDuringFall && !PresentPlayer.IsFalling && state.IsKeyDown(Keys.Up))
-                    vy = PresentPlayer.IsGrounded ? 900 : 22;
+                if (state.IsKeyDown(Keys.Up) && !PresentPlayer.IsFalling && (!holdingStarted.HasValue || (Time.Current - holdingStarted < 2)))
+                {
+                    if (!holdingStarted.HasValue)
+                        holdingStarted = Time.Current;
+                    vy = 500;
+                }
             }
 
             if (!PresentPlayer.IsGrounded)
                 vy -= 58f;
 
             PresentPlayer.Move(new Vector2(vx, vy), dt, this);
+            if (PresentPlayer.IsGrounded && state.IsKeyUp(Keys.Up))
+                holdingStarted = null;
 
             // TODO: Move this to a "script"
             if (futurePlayer.Exists)
@@ -218,12 +227,12 @@ namespace RaspberryRoad.TempusFugit
 
         public bool CanMove(Vector2 position, float delta)
         {
-            return CanMove(position, new Vector2(position.X + delta, position.Y));
+            return !CollisionDetector.Collides(position, new Vector2(delta, 0), GetCollisionGeometry());
         }
 
         public bool CanMove(Vector2 position, Vector2 newPosition)
         {
-            return (door1.CanPass(position, newPosition) && door2.CanPass(position, newPosition));
+            return !CollisionDetector.Collides(position, newPosition - position, GetCollisionGeometry());
         }
 
         public void FirePositionalTriggers(Vector2 Position, float delta)
@@ -238,27 +247,66 @@ namespace RaspberryRoad.TempusFugit
                 timeTravelTrigger.Fire();
         }
 
-        public Vector2 ModifyVelocity(Vector2 Position, Vector2 Velocity, float dt)
+        private IEnumerable<Line2> GetCollisionGeometry()
         {
-            float vy = Velocity.Y;
-            float vx = Velocity.X;
-            
-            if (!CanMove(Position, vx * dt))
-                vx = 0;
+            foreach (var line in lines)
+            {
+                yield return line;
+            }
 
-            // Left edge
-            if ((Position.X + vx * dt) < -30 && vx < 0)
-                vx = (-30 - Position.X) / dt;
+            foreach (var entity in GetEntities())
+            {
+                foreach (var line in entity.GetCollisionGeometry())
+                {
+                    yield return line;
+                }
+            }
+        }
 
-            // Right edge
-            if ((Position.X + vx * dt) > 50 && vx > 0)
-                vx = (50 - Position.X) / dt;
+        public Vector2 GetFinalVelocity(Rectangle2 rectangle, Vector2 velocity)
+        {
+            return CollisionDetector.GetFinalMovement(rectangle, velocity, GetCollisionGeometry());
+        }
 
-            // Ground
-            if ((Position.Y + vy * dt) < 0 && vy < 0)
-                vy = (0 - Position.Y) / dt;
+        public Vector2 GetCollisionResolvingVector(Rectangle2 rectangle)
+        {
+            return CollisionDetector.GetStaticCollisionResolvingVector(rectangle, GetCollisionGeometry());
+        }
 
-            return new Vector2(vx, vy);
+        public IEnumerable<VertexPositionNormalTexture> GetLineVertices()
+        {
+            foreach (var line in GetCollisionGeometry())
+            {
+                yield return ConvertVertex(line.Start);
+                yield return ConvertVertex(line.End);
+            }
+
+            var rectangle = PresentPlayer.GetRectangle();
+
+            yield return ConvertVertex(rectangle.Top.Start);
+            yield return ConvertVertex(rectangle.Top.End);
+            yield return ConvertVertex(rectangle.Left.Start);
+            yield return ConvertVertex(rectangle.Left.End);
+            yield return ConvertVertex(rectangle.Right.Start);
+            yield return ConvertVertex(rectangle.Right.End);
+            yield return ConvertVertex(rectangle.Bottom.Start);
+            yield return ConvertVertex(rectangle.Bottom.End);
+
+            var groundGeometry = GetCollisionGeometry().Where(x => x.Normal().Y > 0.5f);
+
+            yield return ConvertVertex(rectangle.Center + CollisionDetector.GetStaticCollisionResolvingVector(rectangle, groundGeometry));
+            yield return ConvertVertex(rectangle.Center + CollisionDetector.GetStaticCollisionResolvingVector(rectangle, groundGeometry) + new Vector2(0, -0.1f));
+        }
+
+        private static VertexPositionNormalTexture ConvertVertex(Vector2 v)
+        {
+            return new VertexPositionNormalTexture(new Vector3(v.X, v.Y, 0), Vector3.Forward, Vector2.One);
+        }
+
+        public bool IsGrounded(Rectangle2 rectangle)
+        {
+            var groundGeometry = GetCollisionGeometry().Where(x => x.Normal().Y > 0.5f);
+            return CollisionDetector.FindCollision(rectangle + CollisionDetector.GetStaticCollisionResolvingVector(rectangle, groundGeometry), new Vector2(0, -0.1f), groundGeometry).HasValue;
         }
     }
 }

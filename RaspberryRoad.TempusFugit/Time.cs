@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.Xna.Framework;
-
+﻿
 namespace RaspberryRoad.TempusFugit
 {
     public class Time
     {
         float globalTimeCoordinate;
 
+        public float Current { get { return globalTimeCoordinate; } }
         public int GlobalTimeCoordinate { get { return (int)globalTimeCoordinate; } }
 
         public Time()

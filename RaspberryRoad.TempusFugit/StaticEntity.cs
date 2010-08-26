@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using RaspberryRoad.Xna.Collision;
 
 namespace RaspberryRoad.TempusFugit
 {
@@ -20,6 +19,11 @@ namespace RaspberryRoad.TempusFugit
         public override Matrix GetMatrix()
         {
             return matrix;
+        }
+
+        public override IEnumerable<Line2> GetCollisionGeometry()
+        {
+            return Enumerable.Empty<Line2>();
         }
     }
 }
