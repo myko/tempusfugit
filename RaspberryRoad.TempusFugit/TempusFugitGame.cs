@@ -6,13 +6,8 @@ using Microsoft.Xna.Framework.Input;
 
 namespace RaspberryRoad.TempusFugit
 {
-    /// <summary>
-    /// This is the main type for your game
-    /// </summary>
     public class TempusFugitGame : Microsoft.Xna.Framework.Game
     {
-        // comment from iphone
-
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         
@@ -24,7 +19,6 @@ namespace RaspberryRoad.TempusFugit
         List<SpecialEffect> specialEffects;
 
         BasicEffect lineEffect;
-        VertexDeclaration lineVertexDeclaration;
 
         public TempusFugitGame()
         {
@@ -41,13 +35,7 @@ namespace RaspberryRoad.TempusFugit
         /// </summary>
         protected override void Initialize()
         {
-            // Not part of the Effect per se, but is required for drawing            
-            lineVertexDeclaration = new VertexDeclaration(                                                        
-                graphics.GraphicsDevice,                                                        
-                VertexPositionNormalTexture.VertexElements                                                     
-                );
-
-            lineEffect = new BasicEffect(graphics.GraphicsDevice, null);
+            lineEffect = new BasicEffect(graphics.GraphicsDevice);
             lineEffect.DiffuseColor = new Vector3(1.0f, 1.0f, 1.0f);
 
             base.Initialize();
@@ -131,7 +119,7 @@ namespace RaspberryRoad.TempusFugit
 
             DrawWorld();
 
-            spriteBatch.Begin(SpriteBlendMode.AlphaBlend, SpriteSortMode.Immediate, SaveStateMode.SaveState);
+            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
             spriteBatch.DrawString(font, level.Time.GlobalTimeCoordinate.ToString() + ", " + level.TargetGtc.ToString(), Vector2.Zero, Color.White);
             spriteBatch.DrawString(font, level.PresentPlayer.Position.ToString(), new Vector2(0, 16f), Color.White);
             spriteBatch.DrawString(font, level.PresentPlayer.Velocity.ToString(), new Vector2(0, 32f), Color.White);
@@ -147,7 +135,9 @@ namespace RaspberryRoad.TempusFugit
             // TODO: Abstract away into a Camera class
             float aspectRatio = graphics.GraphicsDevice.Viewport.Width / (float)graphics.GraphicsDevice.Viewport.Height;
             Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45.0f), aspectRatio, 1.0f, 10000.0f);
-            Matrix view = Matrix.CreateLookAt(new Vector3(level.PresentPlayer.Position.X, level.PresentPlayer.Position.Y, 26), new Vector3(level.PresentPlayer.Position.X, 1, 0), Vector3.Up);
+            Matrix view = Matrix.CreateLookAt(new Vector3(level.PresentPlayer.Position.X, 1, 15), new Vector3(level.PresentPlayer.Position.X, 1, 0), Vector3.Up);
+
+            graphics.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
             foreach (var player in level.GetActivePlayers())
                 DrawAnimatedModel(player.Model, projection, view, player.GetMatrix(), player.GetColor());
@@ -167,41 +157,32 @@ namespace RaspberryRoad.TempusFugit
 
         private void DrawCollisionGeometry(Matrix projection, Matrix view)
         {
-            graphics.GraphicsDevice.RenderState.DepthBufferEnable = false;
-            graphics.GraphicsDevice.VertexDeclaration = lineVertexDeclaration;
+            GraphicsDevice.DepthStencilState = DepthStencilState.None;
 
-            lineEffect.Begin();
             lineEffect.World = Matrix.Identity;
             lineEffect.View = view;
             lineEffect.Projection = projection;
 
             foreach (EffectPass pass in lineEffect.CurrentTechnique.Passes)
             {
-                pass.Begin();
+                pass.Apply();
 
                 var lines = level.GetLineVertices().ToArray();
 
                 graphics.GraphicsDevice.DrawUserPrimitives<VertexPositionNormalTexture>(PrimitiveType.LineList, lines, 0, lines.Length / 2);
-
-                pass.End();
             }
 
-            lineEffect.End();
-
-            graphics.GraphicsDevice.RenderState.DepthBufferEnable = true;
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
         }
 
         private void EnableTransparency()
         {
-            graphics.GraphicsDevice.RenderState.AlphaBlendEnable = true;
-            graphics.GraphicsDevice.RenderState.SourceBlend = Blend.SourceAlpha;
-            graphics.GraphicsDevice.RenderState.DestinationBlend = Blend.InverseSourceAlpha;
-            graphics.GraphicsDevice.RenderState.BlendFunction = BlendFunction.Add; // add source and dest results
+            graphics.GraphicsDevice.BlendState = BlendState.Additive;
         }
 
         private void DisableTransparency()
         {
-            graphics.GraphicsDevice.RenderState.AlphaBlendEnable = false;
+            graphics.GraphicsDevice.BlendState = BlendState.Opaque;
         }
 
         private void DrawModel(Model model, Matrix projection, Matrix view, Matrix world, Vector3 ambientColor, float alpha)

@@ -1,16 +1,10 @@
-﻿using Microsoft.Xna.Framework;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Xna.Framework;
 
 namespace RaspberryRoad.Xna.Collision
 {
-    public struct Collision2
-    {
-        public float Value;
-        public Line2 Line;
-    }
-
     public static class CollisionDetector
     {
         public static bool Collides(Vector2 position, Vector2 movement, Line2 line)
