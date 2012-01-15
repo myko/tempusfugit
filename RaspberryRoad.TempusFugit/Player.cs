@@ -127,6 +127,7 @@ namespace RaspberryRoad.TempusFugit
     public class PastPlayer : Player
     {
         private Dictionary<int, Vector2> pastPositions = new Dictionary<int, Vector2>();
+        public Dictionary<int, DecisionPoint> decisionPoints = new Dictionary<int, DecisionPoint>();
         private float currentFloatGtc = 0f;
         private int currentGtc = 0;
 
@@ -145,16 +146,23 @@ namespace RaspberryRoad.TempusFugit
 
             if ((level.CanMove(pastPositions[currentGtc], pastPositions[currentGtc + 1])))
             {
-                float delta = pastPositions[currentGtc + 1].X - pastPositions[currentGtc].X;
-                if (delta < 0)
-                    Rotation = 1;
-                if (delta > 0)
-                    Rotation = -1;
+                DecisionPoint decisionPoint = null;
+                if (decisionPoints.ContainsKey(currentGtc))
+                    decisionPoint = decisionPoints[currentGtc];
 
-                Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(9f * delta / 25f)), true, Matrix.Identity);
+                if (decisionPoint == null || decisionPoint.Condition())
+                {
+                    float delta = pastPositions[currentGtc + 1].X - pastPositions[currentGtc].X;
+                    if (delta < 0)
+                        Rotation = 1;
+                    if (delta > 0)
+                        Rotation = -1;
 
-                currentFloatGtc += deltaTime * 25f;
-                currentGtc = (int)currentFloatGtc;
+                    Model.AnimationPlayer.Update(TimeSpan.FromSeconds(Math.Abs(9f * delta / 25f)), true, Matrix.Identity);
+
+                    currentFloatGtc += deltaTime * 25f;
+                    currentGtc = (int)currentFloatGtc;
+                }
             }
 
             float a = 1f - (currentFloatGtc - currentGtc);
@@ -163,12 +171,26 @@ namespace RaspberryRoad.TempusFugit
             return true;
         }
 
-        public void Record(PresentPlayer present, int gtc)
+        public void Record(PresentPlayer present, Level level, int gtc)
         {
             if (pastPositions.ContainsKey(gtc))
                 pastPositions[gtc] = present.Position;
             else
                 pastPositions.Add(gtc, present.Position);
+
+            foreach (var decisionPoint in level.GetDecisionPoints())
+            {
+                if (decisionPoints.ContainsValue(decisionPoint))
+                    continue;
+
+                if (Math.Abs(present.Position.X - decisionPoint.Position.X) < 0.1f)
+                {
+                    if (decisionPoints.ContainsKey(gtc))
+                        decisionPoints[gtc] = decisionPoint;
+                    else
+                        decisionPoints.Add(gtc, decisionPoint);
+                }
+            }
         }
 
         public void Spawn()
@@ -180,6 +202,12 @@ namespace RaspberryRoad.TempusFugit
         public override Vector3 GetColor()
         {
             return new Vector3(0.5f, 1, 0.7f);
+        }
+
+        internal void Despawn()
+        {
+            Exists = false;
+            pastPositions.Clear();
         }
     }
 }

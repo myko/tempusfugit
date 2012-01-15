@@ -24,6 +24,8 @@ namespace RaspberryRoad.TempusFugit
         {
             graphics = new GraphicsDeviceManager(this);
             graphics.PreferMultiSampling = true;
+            graphics.PreferredBackBufferWidth = 1280;
+            graphics.PreferredBackBufferHeight = 960;
             Content.RootDirectory = "Content";
         }
 
@@ -125,6 +127,10 @@ namespace RaspberryRoad.TempusFugit
             spriteBatch.DrawString(font, level.PresentPlayer.Velocity.ToString(), new Vector2(0, 32f), Color.White);
             spriteBatch.DrawString(font, (level.PresentPlayer.IsGrounded ? "IsGrounded " : ""), new Vector2(0, 48f), Color.White);
             spriteBatch.DrawString(font, (level.PresentPlayer.IsFalling ? "IsFalling" : ""), new Vector2(0, 64f), Color.White);
+            if (level.futurePlayer != null && level.futurePlayer.Exists)
+                spriteBatch.DrawString(font, "Recording", new Vector2(0, 80f), Color.White);
+            if (level.pastPlayer != null)
+                spriteBatch.DrawString(font, level.pastPlayer.decisionPoints.Count.ToString(), new Vector2(0, 96f), Color.White);
             spriteBatch.End();
 
             base.Draw(gameTime);
@@ -135,7 +141,7 @@ namespace RaspberryRoad.TempusFugit
             // TODO: Abstract away into a Camera class
             float aspectRatio = graphics.GraphicsDevice.Viewport.Width / (float)graphics.GraphicsDevice.Viewport.Height;
             Matrix projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(45.0f), aspectRatio, 1.0f, 10000.0f);
-            Matrix view = Matrix.CreateLookAt(new Vector3(level.PresentPlayer.Position.X, 1, 15), new Vector3(level.PresentPlayer.Position.X, 1, 0), Vector3.Up);
+            Matrix view = Matrix.CreateLookAt(new Vector3(level.PresentPlayer.Position.X, 1, 30), new Vector3(level.PresentPlayer.Position.X, 1, 0), Vector3.Up);
 
             graphics.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
